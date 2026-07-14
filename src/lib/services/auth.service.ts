@@ -1,57 +1,65 @@
 // ============================================
 // AUTH SERVICE
-// Mock now → swap fetch calls for real
-// Laravel Sanctum endpoints later
 // ============================================
 
-import { AuthUser } from "../types";
-import { mockAuthUsers } from "../mock-data";
+import { apiFetch } from "@/lib/api-client";
+import { AuthUser } from "@/lib/types";
 
-export async function login(
-  email: string,
-  password: string
-): Promise<AuthUser> {
-  // Simulate network delay
-  await new Promise((res) => setTimeout(res, 800));
+interface LaravelAuthResponse {
+  user: {
+    user_id: string;
+    full_name: string;
+    email: string;
+    role: "student" | "supervisor" | "admin";
+    department_id: string;
+    session_id: string;
+  };
+  token: string;
+}
 
-  const user = mockAuthUsers.find((u) => u.email === email);
+interface RegisterPayload {
+  full_name: string;
+  email: string;
+  password: string;
+  password_confirmation: string;
+  role: "student" | "supervisor";
+  department_id: string;
+  session_id: string;
+}
 
-  if (!user) {
-    throw new Error("Invalid email or password");
-  }
+function flattenAuthResponse(res: LaravelAuthResponse): AuthUser {
+  return {
+    ...res.user,
+    token: res.token,
+  };
+}
 
-  // Real implementation:
-  // const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
-  //   method: "POST",
-  //   headers: { "Content-Type": "application/json" },
-  //   body: JSON.stringify({ email, password }),
-  // });
-  // if (!res.ok) throw new Error("Invalid email or password");
-  // return res.json();
-
-  return user;
+export async function login(email: string, password: string): Promise<AuthUser> {
+  const res = await apiFetch<LaravelAuthResponse>("/login", {
+    method: "POST",
+    body: { email, password },
+    skipAuth: true,
+  });
+  return flattenAuthResponse(res);
 }
 
 export async function logout(): Promise<void> {
-  await new Promise((res) => setTimeout(res, 400));
-
-  // Real implementation:
-  // await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/logout`, {
-  //   method: "POST",
-  //   headers: { Authorization: `Bearer ${token}` },
-  // });
+  await apiFetch<void>("/logout", { method: "POST" });
 }
 
-export async function getMe(token: string): Promise<AuthUser | null> {
-  await new Promise((res) => setTimeout(res, 400));
+export async function getMe(token: string): Promise<AuthUser> {
+  const res = await apiFetch<LaravelAuthResponse["user"]>("/user", {
+    method: "GET",
+  });
+  return { ...res, token };
+}
 
-  const user = mockAuthUsers.find((u) => u.token === token);
-  return user ?? null;
 
-  // Real implementation:
-  // const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
-  //   headers: { Authorization: `Bearer ${token}` },
-  // });
-  // if (!res.ok) return null;
-  // return res.json();
+export async function register(payload: RegisterPayload): Promise<AuthUser> {
+  const res = await apiFetch<LaravelAuthResponse>("/register", {
+    method: "POST",
+    body: payload,
+    skipAuth: true,
+  });
+  return flattenAuthResponse(res);
 }

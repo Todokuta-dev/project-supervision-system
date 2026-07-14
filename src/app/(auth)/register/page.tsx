@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, Variants } from "framer-motion";
 import {
@@ -11,7 +11,12 @@ import {
   FileText,
   Users,
 } from "lucide-react";
-import { mockDepartments } from "@/lib/mock-data";
+import {
+  getDepartments,
+  getActiveSession,
+} from "@/lib/services/reference.service";
+import { register } from "@/lib/services/auth.service";
+import { Department } from "@/lib/types";
 
 // --- Animation Variants ---
 const leftVariants: Variants = {
@@ -92,8 +97,30 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [activeSessionId, setActiveSessionId] = useState<string>("");
+  const [isLoadingReference, setIsLoadingReference] = useState(true);
+
+  useEffect(() => {
+    const loadReferenceData = async () => {
+      try {
+        const [depts, session] = await Promise.all([
+          getDepartments(),
+          getActiveSession(),
+        ]);
+        setDepartments(depts);
+        setActiveSessionId(session.session_id);
+      } catch {
+        setError("Could not load registration data. Please try again later.");
+      } finally {
+        setIsLoadingReference(false);
+      }
+    };
+    loadReferenceData();
+  }, []);
+
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
@@ -107,8 +134,8 @@ export default function RegisterPage() {
       return;
     }
 
-    if (formData.password.length < 6) {
-      setError("Password must be at least 6 characters.");
+    if (formData.password.length < 8) {
+      setError("Password must be at least 8 characters.");
       return;
     }
 
@@ -120,20 +147,23 @@ export default function RegisterPage() {
     setIsSubmitting(true);
 
     try {
-      // Mock registration delay
-      await new Promise((res) => setTimeout(res, 1000));
+      await register({
+        full_name: formData.full_name,
+        email: formData.email,
+        password: formData.password,
+        password_confirmation: formData.confirm_password,
+        role: formData.role as "student" | "supervisor",
+        department_id: formData.department_id,
+        session_id: activeSessionId,
+      });
 
-      // Real implementation:
-      // await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/register`, {
-      //   method: "POST",
-      //   headers: { "Content-Type": "application/json" },
-      //   body: JSON.stringify(formData),
-      // });
-
-      // Redirect to login after successful registration
       router.push("/login");
-    } catch {
-      setError("Registration failed. Please try again.");
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Registration failed. Please try again.",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -142,7 +172,6 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-5xl rounded-3xl shadow-2xl overflow-hidden flex flex-col lg:flex-row">
-
         {/* --- LEFT PANEL --- */}
         <motion.div
           variants={leftVariants}
@@ -310,8 +339,11 @@ export default function RegisterPage() {
                     className="w-full px-4 py-2.5 rounded-xl border border-border text-content-primary bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition"
                   >
                     <option value="">Select</option>
-                    {mockDepartments.map((dept) => (
-                      <option key={dept.department_id} value={dept.department_id}>
+                    {departments.map((dept) => (
+                      <option
+                        key={dept.department_id}
+                        value={dept.department_id}
+                      >
                         {dept.code}
                       </option>
                     ))}
@@ -335,7 +367,7 @@ export default function RegisterPage() {
                     required
                     value={formData.password}
                     onChange={handleChange}
-                    placeholder="Min. 6 characters"
+                    placeholder="Min. 8 characters"
                     className="w-full px-4 py-2.5 pr-11 rounded-xl border border-border text-content-primary bg-background placeholder:text-content-secondary text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition"
                   />
                   <button
@@ -400,7 +432,7 @@ export default function RegisterPage() {
               <motion.div variants={fadeUp}>
                 <motion.button
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || isLoadingReference}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   className="w-full bg-primary hover:bg-primary-light text-content-inverse font-semibold py-2.5 rounded-xl transition disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-2"
