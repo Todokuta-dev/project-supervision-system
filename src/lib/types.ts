@@ -54,7 +54,7 @@ export interface Project {
   title: string;
   description: string;
   student_id: string;
-  supervisor_id: string;
+  supervisor_id: string | null;
   department_id: string;
   session_id: string;
   status: ProjectStatus;

@@ -2,8 +2,8 @@
 // PROJECTS SERVICE
 // ============================================
 
+import { apiFetch, ApiError } from "@/lib/api-client";
 import { Project, ProjectStatus } from "../types";
-import { mockProjects } from "../mock-data";
 
 export async function getProjects(filters?: {
   student_id?: string;
@@ -12,9 +12,9 @@ export async function getProjects(filters?: {
   department_id?: string;
   status?: ProjectStatus;
 }): Promise<Project[]> {
-  await new Promise((res) => setTimeout(res, 600));
-
-  let results = [...mockProjects];
+  // Backend already scopes results by role (student sees own, supervisor sees
+  // assigned, admin sees all) — these filters narrow further, client-side.
+  let results = await apiFetch<Project[]>("/projects", { method: "GET" });
 
   if (filters?.student_id) {
     results = results.filter((p) => p.student_id === filters.student_id);
@@ -33,48 +33,36 @@ export async function getProjects(filters?: {
   }
 
   return results;
-
-  // Real implementation:
-  // const params = new URLSearchParams(filters as Record<string, string>);
-  // const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/projects?${params}`, {
-  //   headers: { Authorization: `Bearer ${token}` },
-  // });
-  // return res.json();
 }
 
 export async function getProjectById(id: string): Promise<Project | null> {
-  await new Promise((res) => setTimeout(res, 400));
-
-  return mockProjects.find((p) => p.project_id === id) ?? null;
+  try {
+    return await apiFetch<Project>(`/projects/${id}`, { method: "GET" });
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 404) {
+      return null;
+    }
+    throw err;
+  }
 }
 
 export async function createProject(
-  data: Omit<Project, "project_id" | "created_at" | "updated_at" | "status">
+  data: Omit<Project, "project_id" | "created_at" | "updated_at" | "status" | "supervisor_id"> & {
+    supervisor_id?: string;
+  }
 ): Promise<Project> {
-  await new Promise((res) => setTimeout(res, 800));
-
-  const newProject: Project = {
-    ...data,
-    project_id: `proj_${Date.now()}`,
-    status: "topic_pending",
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  };
-
-  mockProjects.push(newProject);
-  return newProject;
+  return apiFetch<Project>("/projects", {
+    method: "POST",
+    body: data,
+  });
 }
 
 export async function updateProjectStatus(
   project_id: string,
   status: ProjectStatus
 ): Promise<Project> {
-  await new Promise((res) => setTimeout(res, 600));
-
-  const project = mockProjects.find((p) => p.project_id === project_id);
-  if (!project) throw new Error("Project not found");
-
-  project.status = status;
-  project.updated_at = new Date().toISOString();
-  return project;
+  return apiFetch<Project>(`/projects/${project_id}`, {
+    method: "PUT",
+    body: { status },
+  });
 }

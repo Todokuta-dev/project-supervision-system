@@ -70,15 +70,14 @@ export default function SubmitTopicPage() {
 
     setIsSubmitting(true);
 
-    try {
-      await createProject({
-        title: formData.title.trim(),
-        description: formData.description.trim(),
-        student_id: user.user_id,
-        supervisor_id: "",
-        department_id: user.department_id,
-        session_id: activeSession.session_id,
-      });
+  try {
+  await createProject({
+    title: formData.title.trim(),
+    description: formData.description.trim(),
+    student_id: user.user_id,
+    department_id: user.department_id,
+    session_id: activeSession.session_id,
+  });
 
       setIsSuccess(true);
 
