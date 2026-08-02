@@ -2,15 +2,15 @@
 // SUBMISSIONS SERVICE
 // ============================================
 
+import { apiFetch, ApiError } from "@/lib/api-client";
 import { Submission } from "../types";
-import { mockSubmissions } from "../mock-data";
 
 export async function getSubmissions(filters?: {
   project_id?: string;
 }): Promise<Submission[]> {
-  await new Promise((res) => setTimeout(res, 600));
-
-  let results = [...mockSubmissions];
+  // Backend already scopes by role (student sees own, supervisor sees
+  // assigned, admin sees all) — this filter narrows further, client-side.
+  let results = await apiFetch<Submission[]>("/submissions", { method: "GET" });
 
   if (filters?.project_id) {
     results = results.filter((s) => s.project_id === filters.project_id);
@@ -22,22 +22,21 @@ export async function getSubmissions(filters?: {
 export async function getSubmissionById(
   id: string
 ): Promise<Submission | null> {
-  await new Promise((res) => setTimeout(res, 400));
-
-  return mockSubmissions.find((s) => s.submission_id === id) ?? null;
+  try {
+    return await apiFetch<Submission>(`/submissions/${id}`, { method: "GET" });
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 404) {
+      return null;
+    }
+    throw err;
+  }
 }
 
 export async function createSubmission(
   data: Omit<Submission, "submission_id" | "submitted_at">
 ): Promise<Submission> {
-  await new Promise((res) => setTimeout(res, 800));
-
-  const newSubmission: Submission = {
-    ...data,
-    submission_id: `sub_${Date.now()}`,
-    submitted_at: new Date().toISOString(),
-  };
-
-  mockSubmissions.push(newSubmission);
-  return newSubmission;
+  return apiFetch<Submission>("/submissions", {
+    method: "POST",
+    body: data,
+  });
 }

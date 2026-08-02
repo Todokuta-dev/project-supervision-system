@@ -6,7 +6,8 @@ import { getProjects } from "@/lib/services/projects.service";
 import { getSubmissions } from "@/lib/services/submissions.service";
 import { getFeedback } from "@/lib/services/feedback.service";
 import { Project, Submission, Feedback } from "@/lib/types";
-import { mockUsers } from "@/lib/mock-data";
+import { getUsers } from "@/lib/services/users.service";
+import { User } from "@/lib/types";
 import { motion } from "framer-motion";
 import {
   MessageSquare,
@@ -58,7 +59,45 @@ export default function SupervisorFeedbackPage() {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [feedbackList, setFeedbackList] = useState<Feedback[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [filter, setFilter] = useState<"all" | "approve" | "correction_required">("all");
+  const [users, setUsers] = useState<User[]>([]);
+
+  useEffect(() => {
+    if (!user) return;
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const supervisorProjects = await getProjects({
+          supervisor_id: user.user_id,
+        });
+        setProjects(supervisorProjects);
+
+        const allUsers = await getUsers();
+        setUsers(allUsers);
+
+        const allSubs: Submission[] = [];
+        const allFeedback: Feedback[] = [];
+
+        for (const project of supervisorProjects) {
+          const subs = await getSubmissions({ project_id: project.project_id });
+          allSubs.push(...subs);
+
+          for (const sub of subs) {
+            const fb = await getFeedback({ submission_id: sub.submission_id });
+            allFeedback.push(...fb);
+          }
+        }
+
+        setSubmissions(allSubs);
+        setFeedbackList(allFeedback);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, [user]);
+  const [filter, setFilter] = useState<
+    "all" | "approve" | "correction_required"
+  >("all");
 
   useEffect(() => {
     if (!user) return;
@@ -107,14 +146,14 @@ export default function SupervisorFeedbackPage() {
 
   const sorted = [...filtered].sort(
     (a, b) =>
-      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
   );
 
   const approvedCount = feedbackList.filter(
-    (f) => f.decision === "approve"
+    (f) => f.decision === "approve",
   ).length;
   const correctionCount = feedbackList.filter(
-    (f) => f.decision === "correction_required"
+    (f) => f.decision === "correction_required",
   ).length;
 
   return (
@@ -185,13 +224,13 @@ export default function SupervisorFeedbackPage() {
         <div className="space-y-3">
           {sorted.map((fb) => {
             const sub = submissions.find(
-              (s) => s.submission_id === fb.submission_id
+              (s) => s.submission_id === fb.submission_id,
             );
             const project = projects.find(
-              (p) => p.project_id === sub?.project_id
+              (p) => p.project_id === sub?.project_id,
             );
-            const student = mockUsers.find(
-              (u) => u.user_id === project?.student_id
+            const student = users.find(
+              (u) => u.user_id === project?.student_id,
             );
 
             return (

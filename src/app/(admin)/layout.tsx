@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard,
+  UserPlus,
   Users,
   Building2,
   CalendarDays,
@@ -26,6 +27,11 @@ const navLinks = [
     href: "/admin/dashboard",
     label: "Dashboard",
     icon: LayoutDashboard,
+  },
+  {
+    href: "/admin/assign-supervisor",
+    label: "Assign Supervisor",
+    icon: UserPlus,
   },
   {
     href: "/admin/users",

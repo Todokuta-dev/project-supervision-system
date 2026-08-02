@@ -6,7 +6,8 @@ import { getFeedbackById } from "@/lib/services/feedback.service";
 import { getSubmissionById } from "@/lib/services/submissions.service";
 import { getProjectById } from "@/lib/services/projects.service";
 import { Feedback, Submission, Project } from "@/lib/types";
-import { mockUsers } from "@/lib/mock-data";
+import { getUsers } from "@/lib/services/users.service";
+import { User as UserType } from "@/lib/types";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -68,6 +69,36 @@ export default function FeedbackDetailPage() {
     fetchData();
   }, [feedbackId, router]);
 
+ const [users, setUsers] = useState<UserType[]>([]);
+
+useEffect(() => {
+  const fetchData = async () => {
+    setIsLoading(true);
+    try {
+      const fb = await getFeedbackById(feedbackId);
+      if (!fb) {
+        router.replace("/supervisor/submissions");
+        return;
+      }
+      setFeedback(fb);
+
+      const allUsers = await getUsers();
+      setUsers(allUsers);
+
+      const sub = await getSubmissionById(fb.submission_id);
+      setSubmission(sub);
+
+      if (sub) {
+        const proj = await getProjectById(sub.project_id);
+        setProject(proj);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  fetchData();
+}, [feedbackId, router]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -78,8 +109,8 @@ export default function FeedbackDetailPage() {
 
   if (!feedback) return null;
 
-  const student = mockUsers.find((u) => u.user_id === project?.student_id);
-  const supervisor = mockUsers.find((u) => u.user_id === feedback.supervisor_id);
+const student = users.find((u) => u.user_id === project?.student_id);
+const supervisor = users.find((u) => u.user_id === feedback.supervisor_id);
   const isApproved = feedback.decision === "approve";
 
   return (

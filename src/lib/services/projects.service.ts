@@ -66,3 +66,13 @@ export async function updateProjectStatus(
     body: { status },
   });
 }
+
+export async function assignSupervisor(
+  project_id: string,
+  supervisor_id: string
+): Promise<Project> {
+  return apiFetch<Project>(`/projects/${project_id}/assign-supervisor`, {
+    method: "PUT",
+    body: { supervisor_id },
+  });
+}

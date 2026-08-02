@@ -7,13 +7,9 @@ import { getSubmissionById } from "@/lib/services/submissions.service";
 import { getProjectById } from "@/lib/services/projects.service";
 import { getFeedback, createFeedback } from "@/lib/services/feedback.service";
 import { getSimilarityReport } from "@/lib/services/similarity.service";
-import {
-  Submission,
-  Project,
-  Feedback,
-  SimilarityReport,
-} from "@/lib/types";
-import { mockUsers } from "@/lib/mock-data";
+import { Submission, Project, Feedback, SimilarityReport } from "@/lib/types";
+import { getUsers } from "@/lib/services/users.service";
+import { User as UserType } from "@/lib/types";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -51,13 +47,19 @@ export default function ReviewSubmissionPage() {
 
   const [submission, setSubmission] = useState<Submission | null>(null);
   const [project, setProject] = useState<Project | null>(null);
-  const [existingFeedback, setExistingFeedback] = useState<Feedback | null>(null);
-  const [similarityReport, setSimilarityReport] = useState<SimilarityReport | null>(null);
+  const [existingFeedback, setExistingFeedback] = useState<Feedback | null>(
+    null,
+  );
+  const [similarityReport, setSimilarityReport] =
+    useState<SimilarityReport | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [users, setUsers] = useState<UserType[]>([]);
 
   // Form state
   const [comments, setComments] = useState("");
-  const [decision, setDecision] = useState<"approve" | "correction_required">("approve");
+  const [decision, setDecision] = useState<"approve" | "correction_required">(
+    "approve",
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState("");
@@ -82,6 +84,9 @@ export default function ReviewSubmissionPage() {
           setComments(feedback[0].comments);
           setDecision(feedback[0].decision);
         }
+
+        const allUsers = await getUsers();
+        setUsers(allUsers);
 
         const report = await getSimilarityReport(submissionId);
         setSimilarityReport(report);
@@ -132,8 +137,9 @@ export default function ReviewSubmissionPage() {
 
   if (!submission) return null;
 
-  const student = mockUsers.find((u) => u.user_id === project?.student_id);
+  const student = users.find((u) => u.user_id === project?.student_id);
 
+  
   if (isSuccess) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
@@ -236,55 +242,55 @@ export default function ReviewSubmissionPage() {
           </div>
         </div>
 
-{project && (
-  <div className="p-3 bg-background rounded-xl border border-border">
-    <p className="text-content-secondary text-xs mb-1">Project</p>
-    <p className="text-content-primary text-sm font-medium">
-      {project.title}
-    </p>
-  </div>
-)}
+        {project && (
+          <div className="p-3 bg-background rounded-xl border border-border">
+            <p className="text-content-secondary text-xs mb-1">Project</p>
+            <p className="text-content-primary text-sm font-medium">
+              {project.title}
+            </p>
+          </div>
+        )}
 
-{/* File access */}
-<div className="pt-2">
-  <p className="text-content-secondary text-xs font-semibold uppercase tracking-wider mb-2">
-    Submitted File
-  </p>
-  <div className="flex items-center justify-between gap-3 p-3 bg-background rounded-xl border border-border">
-    <div className="flex items-center gap-2 min-w-0">
-      <div className="w-8 h-8 bg-primary/8 border border-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-        <FileText className="w-4 h-4 text-primary" />
-      </div>
-      <div className="min-w-0">
-        <p className="text-content-primary text-sm font-medium truncate">
-          {submission.file_name}
-        </p>
-        <p className="text-content-secondary text-xs">
-          PDF / Word Document
-        </p>
-      </div>
-    </div>
-    <div className="flex items-center gap-2 flex-shrink-0">
-      <a
-        href={submission.file_path}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary-light transition bg-primary/8 hover:bg-primary/15 px-3 py-2 rounded-xl border border-primary/10"
-      >
-        <ExternalLink className="w-3.5 h-3.5" />
-        View
-      </a>
-      <a
-        href={submission.file_path}
-        download={submission.file_name}
-        className="flex items-center gap-1.5 text-xs font-semibold text-white bg-primary hover:bg-primary-light transition px-3 py-2 rounded-xl"
-      >
-        <Download className="w-3.5 h-3.5" />
-        Download
-      </a>
-    </div>
-  </div>
-</div>
+        {/* File access */}
+        <div className="pt-2">
+          <p className="text-content-secondary text-xs font-semibold uppercase tracking-wider mb-2">
+            Submitted File
+          </p>
+          <div className="flex items-center justify-between gap-3 p-3 bg-background rounded-xl border border-border">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-8 h-8 bg-primary/8 border border-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                <FileText className="w-4 h-4 text-primary" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-content-primary text-sm font-medium truncate">
+                  {submission.file_name}
+                </p>
+                <p className="text-content-secondary text-xs">
+                  PDF / Word Document
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <a
+                href={submission.file_path}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary-light transition bg-primary/8 hover:bg-primary/15 px-3 py-2 rounded-xl border border-primary/10"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                View
+              </a>
+              <a
+                href={submission.file_path}
+                download={submission.file_name}
+                className="flex items-center gap-1.5 text-xs font-semibold text-white bg-primary hover:bg-primary-light transition px-3 py-2 rounded-xl"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Download
+              </a>
+            </div>
+          </div>
+        </div>
       </motion.div>
 
       {/* Similarity report */}
@@ -295,8 +301,8 @@ export default function ReviewSubmissionPage() {
             similarityReport.score <= 20
               ? "bg-green-50 border-green-200"
               : similarityReport.score <= 40
-              ? "bg-amber-50 border-amber-200"
-              : "bg-red-50 border-red-200"
+                ? "bg-amber-50 border-amber-200"
+                : "bg-red-50 border-red-200"
           }`}
         >
           <div className="flex items-center justify-between">
@@ -306,8 +312,8 @@ export default function ReviewSubmissionPage() {
                   similarityReport.score <= 20
                     ? "bg-green-100"
                     : similarityReport.score <= 40
-                    ? "bg-amber-100"
-                    : "bg-red-100"
+                      ? "bg-amber-100"
+                      : "bg-red-100"
                 }`}
               >
                 <ShieldCheck
@@ -315,8 +321,8 @@ export default function ReviewSubmissionPage() {
                     similarityReport.score <= 20
                       ? "text-green-600"
                       : similarityReport.score <= 40
-                      ? "text-amber-600"
-                      : "text-red-600"
+                        ? "text-amber-600"
+                        : "text-red-600"
                   }`}
                 />
               </div>
@@ -326,8 +332,8 @@ export default function ReviewSubmissionPage() {
                     similarityReport.score <= 20
                       ? "text-green-700"
                       : similarityReport.score <= 40
-                      ? "text-amber-700"
-                      : "text-red-700"
+                        ? "text-amber-700"
+                        : "text-red-700"
                   }`}
                 >
                   Similarity Score: {similarityReport.score}%
@@ -337,15 +343,15 @@ export default function ReviewSubmissionPage() {
                     similarityReport.score <= 20
                       ? "text-green-600"
                       : similarityReport.score <= 40
-                      ? "text-amber-600"
-                      : "text-red-600"
+                        ? "text-amber-600"
+                        : "text-red-600"
                   }`}
                 >
                   {similarityReport.score <= 20
                     ? "Within acceptable range"
                     : similarityReport.score <= 40
-                    ? "Moderate similarity — review matched sources"
-                    : "High similarity — significant revision required"}
+                      ? "Moderate similarity — review matched sources"
+                      : "High similarity — significant revision required"}
                 </p>
               </div>
             </div>
@@ -358,8 +364,8 @@ export default function ReviewSubmissionPage() {
                 similarityReport.score <= 20
                   ? "text-green-700"
                   : similarityReport.score <= 40
-                  ? "text-amber-700"
-                  : "text-red-700"
+                    ? "text-amber-700"
+                    : "text-red-700"
               }`}
             >
               Matched Sources

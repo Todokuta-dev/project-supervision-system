@@ -89,46 +89,39 @@ export default function AdminApprovalsPage() {
     fetchData();
   }, []);
 
-  const handleDecision = async (
-    approval: Approval,
-    decision: "approved" | "rejected"
-  ) => {
-    if (!user) return;
-    setIsSubmitting(true);
-    try {
-      const updated = await updateApproval(approval.approval_id, {
-        status: decision,
-        notes: notes.trim(),
-        approved_by: user.user_id,
-      });
+const handleDecision = async (
+  approval: Approval,
+  decision: "approved" | "rejected"
+) => {
+  if (!user) return;
+  setIsSubmitting(true);
+  try {
+    const updated = await updateApproval(approval.approval_id, {
+      status: decision,
+      notes: notes.trim(),
+    });
 
-      setApprovals((prev) =>
-        prev.map((a) =>
-          a.approval_id === approval.approval_id ? updated : a
-        )
-      );
+    setApprovals((prev) =>
+      prev.map((a) =>
+        a.approval_id === approval.approval_id ? updated : a
+      )
+    );
 
-      // Update project status accordingly
-      const newStatus = decision === "approved" ? "approved" : "correction_required";
-      await updateProjectStatus(approval.project_id, newStatus);
-      setProjects((prev) =>
-        prev.map((p) =>
-          p.project_id === approval.project_id
-            ? { ...p, status: newStatus }
-            : p
-        )
-      );
+    // Project status was updated atomically on the backend as part of the
+    // same request — refetch to get the authoritative current state.
+    const refreshedProjects = await getProjects();
+    setProjects(refreshedProjects);
 
-      setSuccessMsg(
-        `Approval ${decision === "approved" ? "approved" : "rejected"} successfully.`
-      );
-      setSelectedApproval(null);
-      setNotes("");
-      setTimeout(() => setSuccessMsg(""), 3000);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+    setSuccessMsg(
+      `Approval ${decision === "approved" ? "approved" : "rejected"} successfully.`
+    );
+    setSelectedApproval(null);
+    setNotes("");
+    setTimeout(() => setSuccessMsg(""), 3000);
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   if (isLoading) {
     return (
