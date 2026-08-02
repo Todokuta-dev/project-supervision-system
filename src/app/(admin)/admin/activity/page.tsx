@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { mockActivityLog } from "@/lib/mock-data";
+import { getActivityLogs } from "@/lib/services/activity-logs.service";
 import { ActivityLog } from "@/lib/types";
 import { motion } from "framer-motion";
 import {
@@ -91,14 +91,17 @@ export default function ActivityLogPage() {
   >("all");
   const [entityFilter, setEntityFilter] = useState("all");
 
-  useEffect(() => {
-    // Sort by most recent first
-    const sorted = [...mockActivityLog].sort(
+useEffect(() => {
+  const fetchLogs = async () => {
+    const data = await getActivityLogs();
+    const sorted = [...data].sort(
       (a, b) =>
         new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
     );
     setLogs(sorted);
-  }, []);
+  };
+  fetchLogs();
+}, []);
 
   const entityTypes = [
     "all",

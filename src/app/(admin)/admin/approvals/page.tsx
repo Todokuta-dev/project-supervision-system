@@ -6,7 +6,7 @@ import { getApprovals, updateApproval } from "@/lib/services/approvals.service";
 import { getProjects } from "@/lib/services/projects.service";
 import { updateProjectStatus } from "@/lib/services/projects.service";
 import { Approval, Project } from "@/lib/types";
-import { mockUsers } from "@/lib/mock-data";
+import { mockUsers } from "@/lib/";
 import { motion } from "framer-motion";
 import {
   CheckSquare,

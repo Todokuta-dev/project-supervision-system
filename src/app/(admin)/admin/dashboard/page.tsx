@@ -4,8 +4,17 @@ import { useEffect, useState } from "react";
 import { getProjects } from "@/lib/services/projects.service";
 import { getApprovals } from "@/lib/services/approvals.service";
 import { searchRepository } from "@/lib/services/repository.service";
-import { Project, Approval, RepositoryItem } from "@/lib/types";
-import { mockUsers, mockDepartments, mockSessions } from "@/lib/mock-data";
+import { getUsers } from "@/lib/services/users.service";
+import { getDepartments, getActiveSession } from "@/lib/services/reference.service";
+import { getActivityLogs } from "@/lib/services/activity-logs.service";
+import {
+  Project,
+  Approval,
+  RepositoryItem,
+  User,
+  Department,
+  AcademicSession,
+} from "@/lib/types";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { motion } from "framer-motion";
 import {
@@ -106,20 +115,40 @@ export default function AdminDashboard() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [approvals, setApprovals] = useState<Approval[]>([]);
   const [repoItems, setRepoItems] = useState<RepositoryItem[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [activeSession, setActiveSession] = useState<AcademicSession | null>(null);
+  const [activityCount, setActivityCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const [allProjects, allApprovals, allRepo] = await Promise.all([
+        const [
+          allProjects,
+          allApprovals,
+          allRepo,
+          allUsers,
+          allDepartments,
+          session,
+          allLogs,
+        ] = await Promise.all([
           getProjects(),
           getApprovals(),
           searchRepository(),
+          getUsers(),
+          getDepartments(),
+          getActiveSession().catch(() => null),
+          getActivityLogs(),
         ]);
         setProjects(allProjects);
         setApprovals(allApprovals);
         setRepoItems(allRepo);
+        setUsers(allUsers);
+        setDepartments(allDepartments);
+        setActiveSession(session);
+        setActivityCount(allLogs.length);
       } finally {
         setIsLoading(false);
       }
@@ -136,15 +165,12 @@ export default function AdminDashboard() {
     );
   }
 
-  const totalUsers = mockUsers.length;
-  const totalStudents = mockUsers.filter((u) => u.role === "student").length;
-  const totalSupervisors = mockUsers.filter(
-    (u) => u.role === "supervisor"
-  ).length;
+  const totalUsers = users.length;
+  const totalStudents = users.filter((u) => u.role === "student").length;
+  const totalSupervisors = users.filter((u) => u.role === "supervisor").length;
   const pendingApprovals = approvals.filter(
     (a) => a.status === "pending"
   ).length;
-  const activeSession = mockSessions.find((s) => s.is_active);
 
   const recentProjects = [...projects]
     .sort(
@@ -241,7 +267,6 @@ export default function AdminDashboard() {
 
       {/* --- MIDDLE ROW --- */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-
         {/* Recent Projects */}
         <motion.div
           variants={cardVariants}
@@ -263,10 +288,10 @@ export default function AdminDashboard() {
           {recentProjects.length > 0 ? (
             <div className="space-y-3">
               {recentProjects.map((project) => {
-                const student = mockUsers.find(
+                const student = users.find(
                   (u) => u.user_id === project.student_id
                 );
-                const department = mockDepartments.find(
+                const department = departments.find(
                   (d) => d.department_id === project.department_id
                 );
                 return (
@@ -322,7 +347,7 @@ export default function AdminDashboard() {
                 const project = projects.find(
                   (p) => p.project_id === approval.project_id
                 );
-                const student = mockUsers.find(
+                const student = users.find(
                   (u) => u.user_id === project?.student_id
                 );
                 return (
@@ -376,7 +401,6 @@ export default function AdminDashboard() {
           System Overview
         </h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-
           {/* Departments */}
           <Link
             href="/admin/departments"
@@ -386,14 +410,16 @@ export default function AdminDashboard() {
               <Building2 className="w-5 h-5 text-primary" />
             </div>
             <p className="text-content-primary text-lg font-bold">
-              {mockDepartments.length}
+              {departments.length}
             </p>
             <p className="text-content-secondary text-xs font-medium">
               Departments
             </p>
           </Link>
 
-          {/* Sessions */}
+          {/* Sessions — no "list all sessions" endpoint exists yet, so this
+              shows 1 if an active session exists, 0 otherwise, rather than
+              a fabricated count. */}
           <Link
             href="/admin/sessions"
             className="flex flex-col items-center gap-2 p-4 rounded-xl border border-border hover:border-primary/30 hover:bg-primary/5 transition-all group text-center"
@@ -402,7 +428,7 @@ export default function AdminDashboard() {
               <CalendarDays className="w-5 h-5 text-primary" />
             </div>
             <p className="text-content-primary text-lg font-bold">
-              {mockSessions.length}
+              {activeSession ? 1 : 0}
             </p>
             <p className="text-content-secondary text-xs font-medium">
               Sessions
@@ -433,7 +459,9 @@ export default function AdminDashboard() {
             <div className="w-10 h-10 bg-primary/8 rounded-xl flex items-center justify-center group-hover:bg-primary/15 transition">
               <ActivitySquare className="w-5 h-5 text-primary" />
             </div>
-            <p className="text-content-primary text-lg font-bold">5</p>
+            <p className="text-content-primary text-lg font-bold">
+              {activityCount}
+            </p>
             <p className="text-content-secondary text-xs font-medium">
               Activity Logs
             </p>

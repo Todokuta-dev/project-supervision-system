@@ -1,7 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import { mockDepartments } from "@/lib/mock-data";
+import { useEffect, useState } from "react";
+import {
+  getDepartments,
+  createDepartment,
+  updateDepartment,
+  deleteDepartment,
+} from "@/lib/services/reference.service";
 import { Department } from "@/lib/types";
 import { motion } from "framer-motion";
 import {
@@ -28,13 +33,27 @@ const cardVariants = {
 };
 
 export default function AdminDepartmentsPage() {
-  const [departments, setDepartments] = useState<Department[]>(mockDepartments);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingDept, setEditingDept] = useState<Department | null>(null);
   const [formData, setFormData] = useState({ name: "", code: "" });
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
+
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      setIsLoading(true);
+      try {
+        const data = await getDepartments();
+        setDepartments(data);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchDepartments();
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -74,56 +93,61 @@ export default function AdminDepartmentsPage() {
       return;
     }
 
-    // Check for duplicate code
-    const duplicate = departments.find(
-      (d) =>
-        d.code.toLowerCase() === formData.code.trim().toLowerCase() &&
-        d.department_id !== editingDept?.department_id
-    );
-    if (duplicate) {
-      setError("A department with this code already exists.");
-      return;
-    }
-
     setIsSubmitting(true);
-    await new Promise((res) => setTimeout(res, 600));
-
-    if (editingDept) {
-      setDepartments((prev) =>
-        prev.map((d) =>
-          d.department_id === editingDept.department_id
-            ? {
-                ...d,
-                name: formData.name.trim(),
-                code: formData.code.trim().toUpperCase(),
-              }
-            : d
-        )
+    try {
+      if (editingDept) {
+        const updated = await updateDepartment(editingDept.department_id, {
+          name: formData.name.trim(),
+          code: formData.code.trim(),
+        });
+        setDepartments((prev) =>
+          prev.map((d) =>
+            d.department_id === updated.department_id ? updated : d
+          )
+        );
+        setSuccessMsg("Department updated successfully.");
+      } else {
+        const created = await createDepartment({
+          name: formData.name.trim(),
+          code: formData.code.trim(),
+        });
+        setDepartments((prev) => [...prev, created]);
+        setSuccessMsg("Department created successfully.");
+      }
+      handleClose();
+      setTimeout(() => setSuccessMsg(""), 3000);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Something went wrong. Please try again."
       );
-      setSuccessMsg("Department updated successfully.");
-    } else {
-      const newDept: Department = {
-        department_id: `dept_${Date.now()}`,
-        name: formData.name.trim(),
-        code: formData.code.trim().toUpperCase(),
-      };
-      setDepartments((prev) => [...prev, newDept]);
-      setSuccessMsg("Department created successfully.");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setIsSubmitting(false);
-    handleClose();
-
-    setTimeout(() => setSuccessMsg(""), 3000);
   };
 
-  const handleDelete = (dept: Department) => {
-    setDepartments((prev) =>
-      prev.filter((d) => d.department_id !== dept.department_id)
+  const handleDelete = async (dept: Department) => {
+    try {
+      await deleteDepartment(dept.department_id);
+      setDepartments((prev) =>
+        prev.filter((d) => d.department_id !== dept.department_id)
+      );
+      setSuccessMsg(`"${dept.name}" deleted.`);
+      setTimeout(() => setSuccessMsg(""), 3000);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to delete department."
+      );
+      setTimeout(() => setError(""), 3000);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
     );
-    setSuccessMsg(`"${dept.name}" deleted.`);
-    setTimeout(() => setSuccessMsg(""), 3000);
-  };
+  }
 
   return (
     <motion.div
@@ -169,6 +193,17 @@ export default function AdminDepartmentsPage() {
         </motion.div>
       )}
 
+      {/* Error toast */}
+      {error && !showForm && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-red-50 border border-red-200 text-red-600 text-sm font-medium px-4 py-3 rounded-xl"
+        >
+          {error}
+        </motion.div>
+      )}
+
       {/* Stat */}
       <motion.div
         variants={cardVariants}
@@ -192,7 +227,6 @@ export default function AdminDepartmentsPage() {
       >
         {departments.length > 0 ? (
           <div className="divide-y divide-border">
-            {/* Header */}
             <div className="grid grid-cols-12 gap-4 px-6 py-3 bg-background">
               <p className="col-span-1 text-content-secondary text-xs font-semibold uppercase tracking-wider">
                 #
