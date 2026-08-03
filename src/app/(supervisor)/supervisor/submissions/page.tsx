@@ -5,8 +5,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { getProjects } from "@/lib/services/projects.service";
 import { getSubmissions } from "@/lib/services/submissions.service";
 import { getFeedback } from "@/lib/services/feedback.service";
-import { Project, Submission, Feedback } from "@/lib/types";
-import { mockUsers } from "@/lib/mock-data";
+import { getUsers } from "@/lib/services/users.service";
+import { Project, Submission, Feedback, User } from "@/lib/types";
 import { motion } from "framer-motion";
 import {
   ClipboardList,
@@ -59,6 +59,7 @@ export default function ReviewQueuePage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [feedbackList, setFeedbackList] = useState<Feedback[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "pending" | "reviewed">("all");
@@ -68,6 +69,9 @@ export default function ReviewQueuePage() {
     const fetchData = async () => {
       setIsLoading(true);
       try {
+        const allUsers = await getUsers();
+        setUsers(allUsers);
+
         const supervisorProjects = await getProjects({
           supervisor_id: user.user_id,
         });
@@ -111,7 +115,7 @@ export default function ReviewQueuePage() {
 
   const enriched = submissions.map((sub) => {
     const project = projects.find((p) => p.project_id === sub.project_id);
-    const student = mockUsers.find((u) => u.user_id === project?.student_id);
+    const student = users.find((u) => u.user_id === project?.student_id);
     const feedback = feedbackList.find(
       (f) => f.submission_id === sub.submission_id
     );
@@ -291,7 +295,6 @@ export default function ReviewQueuePage() {
                   </div>
                 </div>
 
-                {/* Feedback preview if reviewed */}
                 {isReviewed && feedback && (
                   <div className="mt-4 pt-4 border-t border-border">
                     <p className="text-content-secondary text-xs line-clamp-2 leading-relaxed">
@@ -300,7 +303,6 @@ export default function ReviewQueuePage() {
                   </div>
                 )}
 
-                {/* Action */}
                 <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">
                   <p className="text-content-secondary text-xs">
                     {sub.file_name}

@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { getProjects } from "@/lib/services/projects.service";
 import { getSubmissions } from "@/lib/services/submissions.service";
-import { Project, Submission } from "@/lib/types";
-import { mockUsers, mockDepartments, mockSessions } from "@/lib/mock-data";
+import { getUsers } from "@/lib/services/users.service";
+import { getDepartments, getAllSessions } from "@/lib/services/reference.service";
+import { Project, Submission, User, Department, AcademicSession } from "@/lib/types";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { motion } from "framer-motion";
 import {
@@ -38,6 +39,9 @@ export default function SupervisorStudentsPage() {
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [sessions, setSessions] = useState<AcademicSession[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [selectedSession, setSelectedSession] = useState("");
@@ -47,8 +51,16 @@ export default function SupervisorStudentsPage() {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const data = await getProjects({ supervisor_id: user.user_id });
+        const [data, allUsers, allDepartments, allSessions] = await Promise.all([
+          getProjects({ supervisor_id: user.user_id }),
+          getUsers(),
+          getDepartments(),
+          getAllSessions().catch(() => []),
+        ]);
         setProjects(data);
+        setUsers(allUsers);
+        setDepartments(allDepartments);
+        setSessions(allSessions);
 
         const allSubs: Submission[] = [];
         for (const project of data) {
@@ -72,7 +84,7 @@ export default function SupervisorStudentsPage() {
   }
 
   const filtered = projects.filter((p) => {
-    const student = mockUsers.find((u) => u.user_id === p.student_id);
+    const student = users.find((u) => u.user_id === p.student_id);
     const matchesSearch =
       !search ||
       p.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -148,7 +160,7 @@ export default function SupervisorStudentsPage() {
           className="px-4 py-2.5 rounded-xl border border-border text-content-primary bg-background-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition"
         >
           <option value="">All Sessions</option>
-          {mockSessions.map((s) => (
+          {sessions.map((s) => (
             <option key={s.session_id} value={s.session_id}>
               {s.label}
               {s.is_active ? " (Current)" : ""}
@@ -161,13 +173,13 @@ export default function SupervisorStudentsPage() {
       {filtered.length > 0 ? (
         <div className="space-y-4">
           {filtered.map((project) => {
-            const student = mockUsers.find(
+            const student = users.find(
               (u) => u.user_id === project.student_id
             );
-            const department = mockDepartments.find(
+            const department = departments.find(
               (d) => d.department_id === project.department_id
             );
-            const session = mockSessions.find(
+            const session = sessions.find(
               (s) => s.session_id === project.session_id
             );
             const projectSubs = submissions.filter(
@@ -181,7 +193,6 @@ export default function SupervisorStudentsPage() {
                 className="bg-background-surface rounded-2xl border border-border p-5 hover:border-primary/30 transition-all"
               >
                 <div className="flex items-start justify-between gap-4">
-                  {/* Student info */}
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
                       <span className="text-primary font-bold text-sm">
@@ -200,7 +211,6 @@ export default function SupervisorStudentsPage() {
                   <StatusBadge status={project.status} size="sm" />
                 </div>
 
-                {/* Project title */}
                 <div className="mt-4 p-3 bg-background rounded-xl border border-border">
                   <div className="flex items-start gap-2">
                     <FolderOpen className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
@@ -210,7 +220,6 @@ export default function SupervisorStudentsPage() {
                   </div>
                 </div>
 
-                {/* Meta */}
                 <div className="flex items-center gap-4 mt-3 flex-wrap">
                   <div className="flex items-center gap-1.5 text-content-secondary text-xs">
                     <Building2 className="w-3.5 h-3.5" />
@@ -227,7 +236,6 @@ export default function SupervisorStudentsPage() {
                   </div>
                 </div>
 
-                {/* Actions */}
                 <div className="flex items-center gap-3 mt-4 pt-4 border-t border-border">
                   <Link
                     href={`/supervisor/submissions/${project.project_id}/review`}

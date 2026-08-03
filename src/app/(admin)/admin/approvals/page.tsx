@@ -4,16 +4,15 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { getApprovals, updateApproval } from "@/lib/services/approvals.service";
 import { getProjects } from "@/lib/services/projects.service";
-import { updateProjectStatus } from "@/lib/services/projects.service";
-import { Approval, Project } from "@/lib/types";
-import { mockUsers } from "@/lib/";
+import { getUsers } from "@/lib/services/users.service";
+import { Approval, Project, User } from "@/lib/types";
 import { motion } from "framer-motion";
 import {
   CheckSquare,
   CheckCircle2,
   XCircle,
   Clock,
-  User,
+  User as UserIcon,
   FolderOpen,
   X,
 } from "lucide-react";
@@ -65,6 +64,7 @@ export default function AdminApprovalsPage() {
 
   const [approvals, setApprovals] = useState<Approval[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "pending" | "approved" | "rejected">("all");
   const [selectedApproval, setSelectedApproval] = useState<Approval | null>(null);
@@ -76,12 +76,14 @@ export default function AdminApprovalsPage() {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const [allApprovals, allProjects] = await Promise.all([
+        const [allApprovals, allProjects, allUsers] = await Promise.all([
           getApprovals(),
           getProjects(),
+          getUsers(),
         ]);
         setApprovals(allApprovals);
         setProjects(allProjects);
+        setUsers(allUsers);
       } finally {
         setIsLoading(false);
       }
@@ -89,39 +91,39 @@ export default function AdminApprovalsPage() {
     fetchData();
   }, []);
 
-const handleDecision = async (
-  approval: Approval,
-  decision: "approved" | "rejected"
-) => {
-  if (!user) return;
-  setIsSubmitting(true);
-  try {
-    const updated = await updateApproval(approval.approval_id, {
-      status: decision,
-      notes: notes.trim(),
-    });
+  const handleDecision = async (
+    approval: Approval,
+    decision: "approved" | "rejected"
+  ) => {
+    if (!user) return;
+    setIsSubmitting(true);
+    try {
+      const updated = await updateApproval(approval.approval_id, {
+        status: decision,
+        notes: notes.trim(),
+      });
 
-    setApprovals((prev) =>
-      prev.map((a) =>
-        a.approval_id === approval.approval_id ? updated : a
-      )
-    );
+      setApprovals((prev) =>
+        prev.map((a) =>
+          a.approval_id === approval.approval_id ? updated : a
+        )
+      );
 
-    // Project status was updated atomically on the backend as part of the
-    // same request — refetch to get the authoritative current state.
-    const refreshedProjects = await getProjects();
-    setProjects(refreshedProjects);
+      // Project status was updated atomically on the backend as part of the
+      // same request — refetch to get the authoritative current state.
+      const refreshedProjects = await getProjects();
+      setProjects(refreshedProjects);
 
-    setSuccessMsg(
-      `Approval ${decision === "approved" ? "approved" : "rejected"} successfully.`
-    );
-    setSelectedApproval(null);
-    setNotes("");
-    setTimeout(() => setSuccessMsg(""), 3000);
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+      setSuccessMsg(
+        `Approval ${decision === "approved" ? "approved" : "rejected"} successfully.`
+      );
+      setSelectedApproval(null);
+      setNotes("");
+      setTimeout(() => setSuccessMsg(""), 3000);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -221,10 +223,10 @@ const handleDecision = async (
             const project = projects.find(
               (p) => p.project_id === approval.project_id
             );
-            const student = mockUsers.find(
+            const student = users.find(
               (u) => u.user_id === project?.student_id
             );
-            const approvedBy = mockUsers.find(
+            const approvedBy = users.find(
               (u) => u.user_id === approval.approved_by
             );
             const isPending = approval.status === "pending";
@@ -300,7 +302,7 @@ const handleDecision = async (
                     )}
                     {approvedBy && !isPending && (
                       <div className="flex items-center gap-1.5 text-content-secondary text-xs">
-                        <User className="w-3.5 h-3.5" />
+                        <UserIcon className="w-3.5 h-3.5" />
                         {approvedBy.full_name}
                       </div>
                     )}
@@ -376,7 +378,7 @@ const handleDecision = async (
               const project = projects.find(
                 (p) => p.project_id === selectedApproval.project_id
               );
-              const student = mockUsers.find(
+              const student = users.find(
                 (u) => u.user_id === project?.student_id
               );
               return (

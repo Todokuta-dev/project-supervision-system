@@ -5,8 +5,8 @@ import { useParams, useRouter } from "next/navigation";
 import { getSimilarityReportById } from "@/lib/services/similarity.service";
 import { getSubmissionById } from "@/lib/services/submissions.service";
 import { getProjectById } from "@/lib/services/projects.service";
-import { SimilarityReport, Submission, Project } from "@/lib/types";
-import { mockUsers } from "@/lib/mock-data";
+import { getUsers } from "@/lib/services/users.service";
+import { SimilarityReport, Submission, Project, User as UserType } from "@/lib/types";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -40,18 +40,24 @@ export default function SimilarityReportDetailPage() {
   const [report, setReport] = useState<SimilarityReport | null>(null);
   const [submission, setSubmission] = useState<Submission | null>(null);
   const [project, setProject] = useState<Project | null>(null);
+  const [users, setUsers] = useState<UserType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const r = await getSimilarityReportById(reportId);
+        const [r, allUsers] = await Promise.all([
+          getSimilarityReportById(reportId),
+          getUsers(),
+        ]);
+
         if (!r) {
           router.replace("/supervisor/similarity");
           return;
         }
         setReport(r);
+        setUsers(allUsers);
 
         const sub = await getSubmissionById(r.submission_id);
         setSubmission(sub);
@@ -77,7 +83,7 @@ export default function SimilarityReportDetailPage() {
 
   if (!report) return null;
 
-  const student = mockUsers.find((u) => u.user_id === project?.student_id);
+  const student = users.find((u) => u.user_id === project?.student_id);
   const isHigh = report.score > 40;
   const isMid = report.score > 20 && report.score <= 40;
 
@@ -267,7 +273,6 @@ export default function SimilarityReportDetailPage() {
             key={index}
             className="rounded-2xl border border-border overflow-hidden"
           >
-            {/* Source header */}
             <div className="flex items-center justify-between px-4 py-3 bg-background border-b border-border">
               <p className="text-content-primary text-sm font-semibold">
                 {index + 1}. {source.source_title}
@@ -283,7 +288,6 @@ export default function SimilarityReportDetailPage() {
               </span>
             </div>
 
-            {/* Side by side excerpts */}
             <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-border">
               <div className="p-4 space-y-2">
                 <p className="text-xs font-semibold text-content-secondary uppercase tracking-wider">
