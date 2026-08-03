@@ -2,15 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { searchRepository } from "@/lib/services/repository.service";
-import { RepositoryItem } from "@/lib/types";
-import { mockDepartments, mockSessions, mockUsers } from "@/lib/mock-data";
+import { getDepartments, getAllSessions } from "@/lib/services/reference.service";
+import { getUsers } from "@/lib/services/users.service";
+import { RepositoryItem, Department, AcademicSession, User } from "@/lib/types";
 import { motion } from "framer-motion";
 import {
   Search,
   Library,
   Filter,
   BookOpen,
-  User,
+  User as UserIcon,
   Building2,
   CalendarDays,
   Download,
@@ -33,6 +34,9 @@ const cardVariants = {
 
 export default function RepositoryPage() {
   const [items, setItems] = useState<RepositoryItem[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [sessions, setSessions] = useState<AcademicSession[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [keyword, setKeyword] = useState("");
   const [selectedDept, setSelectedDept] = useState("");
@@ -40,13 +44,20 @@ export default function RepositoryPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [searched, setSearched] = useState(false);
 
-  // Load all on mount
   useEffect(() => {
     const fetchAll = async () => {
       setIsLoading(true);
       try {
-        const data = await searchRepository();
+        const [data, allDepartments, allSessions, allUsers] = await Promise.all([
+          searchRepository(),
+          getDepartments(),
+          getAllSessions().catch(() => []),
+          getUsers(),
+        ]);
         setItems(data);
+        setDepartments(allDepartments);
+        setSessions(allSessions);
+        setUsers(allUsers);
       } finally {
         setIsLoading(false);
       }
@@ -141,14 +152,12 @@ export default function RepositoryPage() {
             </button>
           </div>
 
-          {/* Filter panel */}
           {showFilters && (
             <motion.div
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
               className="bg-background-surface rounded-2xl border border-border p-4 grid grid-cols-1 sm:grid-cols-2 gap-4"
             >
-              {/* Department filter — data-driven */}
               <div>
                 <label className="block text-xs font-semibold text-content-secondary uppercase tracking-wider mb-1.5">
                   Department
@@ -159,7 +168,7 @@ export default function RepositoryPage() {
                   className="w-full px-3 py-2 rounded-xl border border-border text-content-primary bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition"
                 >
                   <option value="">All Departments</option>
-                  {mockDepartments.map((dept) => (
+                  {departments.map((dept) => (
                     <option key={dept.department_id} value={dept.department_id}>
                       {dept.name}
                     </option>
@@ -167,7 +176,6 @@ export default function RepositoryPage() {
                 </select>
               </div>
 
-              {/* Session filter — data-driven, searches across ALL sessions */}
               <div>
                 <label className="block text-xs font-semibold text-content-secondary uppercase tracking-wider mb-1.5">
                   Academic Session
@@ -178,7 +186,7 @@ export default function RepositoryPage() {
                   className="w-full px-3 py-2 rounded-xl border border-border text-content-primary bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition"
                 >
                   <option value="">All Sessions</option>
-                  {mockSessions.map((session) => (
+                  {sessions.map((session) => (
                     <option key={session.session_id} value={session.session_id}>
                       {session.label}
                       {session.is_active ? " (Current)" : ""}
@@ -189,7 +197,6 @@ export default function RepositoryPage() {
             </motion.div>
           )}
 
-          {/* Active filters indicator */}
           {hasActiveFilters && (
             <div className="flex items-center gap-2">
               <span className="text-content-secondary text-xs">
@@ -205,9 +212,8 @@ export default function RepositoryPage() {
               )}
               {selectedDept && (
                 <span className="inline-flex items-center gap-1 bg-primary/10 text-primary text-xs font-medium px-2.5 py-1 rounded-full border border-primary/20">
-                  {mockDepartments.find(
-                    (d) => d.department_id === selectedDept
-                  )?.code ?? selectedDept}
+                  {departments.find((d) => d.department_id === selectedDept)
+                    ?.code ?? selectedDept}
                   <button onClick={() => setSelectedDept("")}>
                     <X className="w-3 h-3" />
                   </button>
@@ -215,9 +221,8 @@ export default function RepositoryPage() {
               )}
               {selectedSession && (
                 <span className="inline-flex items-center gap-1 bg-primary/10 text-primary text-xs font-medium px-2.5 py-1 rounded-full border border-primary/20">
-                  {mockSessions.find(
-                    (s) => s.session_id === selectedSession
-                  )?.label ?? selectedSession}
+                  {sessions.find((s) => s.session_id === selectedSession)
+                    ?.label ?? selectedSession}
                   <button onClick={() => setSelectedSession("")}>
                     <X className="w-3 h-3" />
                   </button>
@@ -258,29 +263,27 @@ export default function RepositoryPage() {
         </motion.div>
       )}
 
-      {/* Loading */}
       {isLoading && (
         <div className="flex items-center justify-center h-48">
           <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
         </div>
       )}
 
-      {/* Results */}
       {!isLoading && (
         <>
           {items.length > 0 ? (
             <div className="space-y-4">
               {items.map((item) => {
-                const department = mockDepartments.find(
+                const department = departments.find(
                   (d) => d.department_id === item.department_id
                 );
-                const session = mockSessions.find(
+                const session = sessions.find(
                   (s) => s.session_id === item.session_id
                 );
-                const student = mockUsers.find(
+                const student = users.find(
                   (u) => u.user_id === item.student_id
                 );
-                const supervisor = mockUsers.find(
+                const supervisor = users.find(
                   (u) => u.user_id === item.supervisor_id
                 );
 
@@ -290,7 +293,6 @@ export default function RepositoryPage() {
                     variants={cardVariants}
                     className="bg-background-surface rounded-2xl border border-border p-6 hover:border-primary/30 transition-all space-y-4"
                   >
-                    {/* Title + download */}
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex items-start gap-3 flex-1 min-w-0">
                         <div className="w-10 h-10 bg-primary/8 border border-primary/10 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -322,12 +324,10 @@ export default function RepositoryPage() {
                       </a>
                     </div>
 
-                    {/* Abstract */}
                     <p className="text-content-secondary text-sm leading-relaxed line-clamp-3">
                       {item.abstract}
                     </p>
 
-                    {/* Keywords */}
                     <div className="flex items-center gap-2 flex-wrap">
                       {item.keywords.map((kw) => (
                         <span
@@ -339,14 +339,13 @@ export default function RepositoryPage() {
                       ))}
                     </div>
 
-                    {/* Footer */}
                     <div className="flex items-center gap-4 pt-1 border-t border-border">
                       <div className="flex items-center gap-1.5 text-content-secondary text-xs">
-                        <User className="w-3.5 h-3.5" />
+                        <UserIcon className="w-3.5 h-3.5" />
                         {student?.full_name ?? "Unknown"}
                       </div>
                       <div className="flex items-center gap-1.5 text-content-secondary text-xs">
-                        <User className="w-3.5 h-3.5" />
+                        <UserIcon className="w-3.5 h-3.5" />
                         Supervised by{" "}
                         <span className="text-content-primary font-medium">
                           {supervisor?.full_name ?? "Unknown"}

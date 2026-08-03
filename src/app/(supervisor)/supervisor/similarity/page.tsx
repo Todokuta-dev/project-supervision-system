@@ -5,8 +5,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { getProjects } from "@/lib/services/projects.service";
 import { getSubmissions } from "@/lib/services/submissions.service";
 import { getSimilarityReport } from "@/lib/services/similarity.service";
-import { Project, Submission, SimilarityReport } from "@/lib/types";
-import { mockUsers } from "@/lib/mock-data";
+import { getUsers } from "@/lib/services/users.service";
+import { Project, Submission, SimilarityReport, User } from "@/lib/types";
 import { motion } from "framer-motion";
 import {
   ScanSearch,
@@ -60,6 +60,7 @@ export default function SimilarityReportsPage() {
   const { user } = useAuth();
 
   const [enrichedReports, setEnrichedReports] = useState<EnrichedReport[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "low" | "medium" | "high">("all");
 
@@ -68,6 +69,9 @@ export default function SimilarityReportsPage() {
     const fetchData = async () => {
       setIsLoading(true);
       try {
+        const allUsers = await getUsers();
+        setUsers(allUsers);
+
         const projects = await getProjects({ supervisor_id: user.user_id });
         const results: EnrichedReport[] = [];
 
@@ -183,7 +187,7 @@ export default function SimilarityReportsPage() {
       {filtered.length > 0 ? (
         <div className="space-y-4">
           {filtered.map(({ report, submission, project }) => {
-            const student = mockUsers.find(
+            const student = users.find(
               (u) => u.user_id === project.student_id
             );
             const isHigh = report.score > 40;
@@ -195,7 +199,6 @@ export default function SimilarityReportsPage() {
                 variants={cardVariants}
                 className="bg-background-surface rounded-2xl border border-border p-5 hover:border-primary/30 transition-all space-y-4"
               >
-                {/* Top row */}
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     <div
@@ -230,7 +233,6 @@ export default function SimilarityReportsPage() {
                   <ScoreBadge score={report.score} />
                 </div>
 
-                {/* Score bar */}
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <p className="text-content-secondary text-xs">
@@ -254,7 +256,6 @@ export default function SimilarityReportsPage() {
                   </div>
                 </div>
 
-                {/* Matched sources preview */}
                 <div className="space-y-2">
                   <p className="text-content-secondary text-xs font-semibold uppercase tracking-wider">
                     {report.matched_sources.length} Matched Source
@@ -275,7 +276,6 @@ export default function SimilarityReportsPage() {
                   ))}
                 </div>
 
-                {/* Footer */}
                 <div className="flex items-center justify-between pt-2 border-t border-border">
                   <div className="flex items-center gap-1.5 text-content-secondary text-xs">
                     <Clock className="w-3.5 h-3.5" />

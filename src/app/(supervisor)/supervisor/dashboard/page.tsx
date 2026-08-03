@@ -5,8 +5,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { getProjects } from "@/lib/services/projects.service";
 import { getSubmissions } from "@/lib/services/submissions.service";
 import { getFeedback } from "@/lib/services/feedback.service";
-import { Project, Submission, Feedback } from "@/lib/types";
-import { mockUsers } from "@/lib/mock-data";
+import { getUsers } from "@/lib/services/users.service";
+import { Project, Submission, Feedback, User } from "@/lib/types";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { motion } from "framer-motion";
 import {
@@ -124,6 +124,7 @@ export default function SupervisorDashboard() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [feedbackList, setFeedbackList] = useState<Feedback[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -132,13 +133,14 @@ export default function SupervisorDashboard() {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        // Fetch all projects assigned to this supervisor
+        const allUsers = await getUsers();
+        setUsers(allUsers);
+
         const supervisorProjects = await getProjects({
           supervisor_id: user.user_id,
         });
         setProjects(supervisorProjects);
 
-        // Fetch all submissions and feedback for those projects
         const allSubmissions: Submission[] = [];
         const allFeedback: Feedback[] = [];
 
@@ -174,7 +176,6 @@ export default function SupervisorDashboard() {
     );
   }
 
-  // Pending submissions — those with no feedback yet
   const reviewedSubmissionIds = new Set(feedbackList.map((f) => f.submission_id));
   const pendingReviews = submissions.filter(
     (s) => !reviewedSubmissionIds.has(s.submission_id)
@@ -236,7 +237,6 @@ export default function SupervisorDashboard() {
 
       {/* --- BOTTOM ROW --- */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-
         {/* Assigned Students / Projects */}
         <motion.div
           variants={cardVariants}
@@ -258,7 +258,7 @@ export default function SupervisorDashboard() {
           {recentProjects.length > 0 ? (
             <div className="space-y-3">
               {recentProjects.map((project) => {
-                const student = mockUsers.find(
+                const student = users.find(
                   (u) => u.user_id === project.student_id
                 );
                 return (
@@ -320,7 +320,7 @@ export default function SupervisorDashboard() {
                 const project = projects.find(
                   (p) => p.project_id === sub.project_id
                 );
-                const student = mockUsers.find(
+                const student = users.find(
                   (u) => u.user_id === project?.student_id
                 );
                 return (
@@ -399,7 +399,7 @@ export default function SupervisorDashboard() {
               const project = projects.find(
                 (p) => p.project_id === sub?.project_id
               );
-              const student = mockUsers.find(
+              const student = users.find(
                 (u) => u.user_id === project?.student_id
               );
               return (

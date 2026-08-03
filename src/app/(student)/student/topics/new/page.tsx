@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { createProject } from "@/lib/services/projects.service";
-import { mockDepartments, mockSessions } from "@/lib/mock-data";
+import { getDepartments, getActiveSession } from "@/lib/services/reference.service";
+import { Department, AcademicSession } from "@/lib/types";
 import { motion } from "framer-motion";
 import {
   FolderOpen,
@@ -36,11 +37,29 @@ export default function SubmitTopicPage() {
     title: "",
     description: "",
   });
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [activeSession, setActiveSession] = useState<AcademicSession | null>(null);
+  const [isLoadingReference, setIsLoadingReference] = useState(true);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
-  const activeSession = mockSessions.find((s) => s.is_active);
+  useEffect(() => {
+    const loadReferenceData = async () => {
+      setIsLoadingReference(true);
+      try {
+        const [allDepartments, session] = await Promise.all([
+          getDepartments(),
+          getActiveSession().catch(() => null),
+        ]);
+        setDepartments(allDepartments);
+        setActiveSession(session);
+      } finally {
+        setIsLoadingReference(false);
+      }
+    };
+    loadReferenceData();
+  }, []);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -70,29 +89,29 @@ export default function SubmitTopicPage() {
 
     setIsSubmitting(true);
 
-  try {
-  await createProject({
-    title: formData.title.trim(),
-    description: formData.description.trim(),
-    student_id: user.user_id,
-    department_id: user.department_id,
-    session_id: activeSession.session_id,
-  });
+    try {
+      await createProject({
+        title: formData.title.trim(),
+        description: formData.description.trim(),
+        student_id: user.user_id,
+        department_id: user.department_id,
+        session_id: activeSession.session_id,
+      });
 
       setIsSuccess(true);
 
-      // Redirect to dashboard after 2 seconds
       setTimeout(() => {
         router.push("/student/dashboard");
       }, 2000);
-    } catch {
-      setError("Failed to submit topic. Please try again.");
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to submit topic. Please try again."
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Success state
   if (isSuccess) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
@@ -229,7 +248,7 @@ export default function SubmitTopicPage() {
               Department
             </label>
             <div className="w-full px-4 py-2.5 rounded-xl border border-border bg-background/60 text-content-secondary text-sm">
-              {mockDepartments.find(
+              {departments.find(
                 (d) => d.department_id === user?.department_id
               )?.name ?? "—"}
             </div>
@@ -269,7 +288,7 @@ export default function SubmitTopicPage() {
           <div className="flex items-center gap-3 pt-2">
             <motion.button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || isLoadingReference}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               className="flex-1 bg-primary hover:bg-primary-light text-white font-semibold py-2.5 rounded-xl transition disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
