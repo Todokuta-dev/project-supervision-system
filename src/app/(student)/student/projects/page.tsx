@@ -3,15 +3,16 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { getProjects } from "@/lib/services/projects.service";
-import { Project } from "@/lib/types";
-import { mockDepartments, mockSessions, mockUsers } from "@/lib/mock-data";
+import { getUsers } from "@/lib/services/users.service";
+import { getDepartments, getActiveSession, getAllSessions } from "@/lib/services/reference.service";
+import { Project, User, Department, AcademicSession } from "@/lib/types";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { motion } from "framer-motion";
 import {
   FolderOpen,
   ArrowRight,
   Clock,
-  User,
+  User as UserIcon,
   Building2,
   CalendarDays,
   Plus,
@@ -35,6 +36,10 @@ const cardVariants = {
 export default function StudentProjectsPage() {
   const { user } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [activeSession, setActiveSession] = useState<AcademicSession | null>(null);
+  const [allSessions, setAllSessions] = useState<AcademicSession[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -42,8 +47,18 @@ export default function StudentProjectsPage() {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const data = await getProjects({ student_id: user.user_id });
+        const [data, allUsers, allDepartments, session, sessions] = await Promise.all([
+          getProjects({ student_id: user.user_id }),
+          getUsers(),
+          getDepartments(),
+          getActiveSession().catch(() => null),
+          getAllSessions().catch(() => []),
+        ]);
         setProjects(data);
+        setUsers(allUsers);
+        setDepartments(allDepartments);
+        setActiveSession(session);
+        setAllSessions(sessions);
       } finally {
         setIsLoading(false);
       }
@@ -59,7 +74,6 @@ export default function StudentProjectsPage() {
     );
   }
 
-  const activeSession = mockSessions.find((s) => s.is_active);
   const currentProject = projects.find(
     (p) => p.session_id === activeSession?.session_id
   );
@@ -130,11 +144,11 @@ export default function StudentProjectsPage() {
             {/* Meta */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
               <div className="flex items-center gap-2">
-                <User className="w-3.5 h-3.5 text-content-secondary flex-shrink-0" />
+                <UserIcon className="w-3.5 h-3.5 text-content-secondary flex-shrink-0" />
                 <div>
                   <p className="text-content-secondary text-xs">Supervisor</p>
                   <p className="text-content-primary text-xs font-medium">
-                    {mockUsers.find(
+                    {users.find(
                       (u) => u.user_id === currentProject.supervisor_id
                     )?.full_name ?? "Not assigned"}
                   </p>
@@ -145,7 +159,7 @@ export default function StudentProjectsPage() {
                 <div>
                   <p className="text-content-secondary text-xs">Department</p>
                   <p className="text-content-primary text-xs font-medium">
-                    {mockDepartments.find(
+                    {departments.find(
                       (d) => d.department_id === currentProject.department_id
                     )?.code ?? "—"}
                   </p>
@@ -202,7 +216,7 @@ export default function StudentProjectsPage() {
           </p>
           <div className="space-y-3">
             {pastProjects.map((project) => {
-              const session = mockSessions.find(
+              const session = allSessions.find(
                 (s) => s.session_id === project.session_id
               );
               return (

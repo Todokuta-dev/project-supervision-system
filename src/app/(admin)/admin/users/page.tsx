@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { mockUsers, mockDepartments, mockSessions } from "@/lib/mock-data";
-import { User } from "@/lib/types";
+import { useEffect, useState } from "react";
+import { getUsers } from "@/lib/services/users.service";
+import { getDepartments, getAllSessions } from "@/lib/services/reference.service";
+import { User, Department, AcademicSession } from "@/lib/types";
 import { motion } from "framer-motion";
 import {
   Users,
@@ -65,11 +66,42 @@ function RoleBadge({ role }: { role: string }) {
 }
 
 export default function AdminUsersPage() {
+  const [users, setUsers] = useState<User[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [sessions, setSessions] = useState<AcademicSession[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<"all" | "student" | "supervisor" | "admin">("all");
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
-  const filtered = mockUsers.filter((u) => {
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const [allUsers, allDepartments, allSessions] = await Promise.all([
+          getUsers(),
+          getDepartments(),
+          getAllSessions(),
+        ]);
+        setUsers(allUsers);
+        setDepartments(allDepartments);
+        setSessions(allSessions);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  const filtered = users.filter((u) => {
     const matchesSearch =
       !search ||
       u.full_name.toLowerCase().includes(search.toLowerCase()) ||
@@ -78,9 +110,9 @@ export default function AdminUsersPage() {
     return matchesSearch && matchesRole;
   });
 
-  const studentCount = mockUsers.filter((u) => u.role === "student").length;
-  const supervisorCount = mockUsers.filter((u) => u.role === "supervisor").length;
-  const adminCount = mockUsers.filter((u) => u.role === "admin").length;
+  const studentCount = users.filter((u) => u.role === "student").length;
+  const supervisorCount = users.filter((u) => u.role === "supervisor").length;
+  const adminCount = users.filter((u) => u.role === "admin").length;
 
   return (
     <motion.div
@@ -173,7 +205,6 @@ export default function AdminUsersPage() {
       >
         {filtered.length > 0 ? (
           <div className="divide-y divide-border">
-            {/* Table header */}
             <div className="hidden sm:grid grid-cols-12 gap-4 px-6 py-3 bg-background">
               <p className="col-span-4 text-content-secondary text-xs font-semibold uppercase tracking-wider">
                 User
@@ -192,12 +223,11 @@ export default function AdminUsersPage() {
               </p>
             </div>
 
-            {/* Rows */}
             {filtered.map((user) => {
-              const department = mockDepartments.find(
+              const department = departments.find(
                 (d) => d.department_id === user.department_id
               );
-              const session = mockSessions.find(
+              const session = sessions.find(
                 (s) => s.session_id === user.session_id
               );
               return (
@@ -205,7 +235,6 @@ export default function AdminUsersPage() {
                   key={user.user_id}
                   className="grid grid-cols-1 sm:grid-cols-12 gap-4 px-6 py-4 hover:bg-background transition"
                 >
-                  {/* User */}
                   <div className="col-span-4 flex items-center gap-3">
                     <div className="w-9 h-9 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
                       <span className="text-primary text-sm font-bold">
@@ -223,12 +252,10 @@ export default function AdminUsersPage() {
                     </div>
                   </div>
 
-                  {/* Role */}
                   <div className="col-span-2 flex items-center">
                     <RoleBadge role={user.role} />
                   </div>
 
-                  {/* Department */}
                   <div className="col-span-3 flex items-center gap-1.5 text-content-secondary text-xs">
                     <Building2 className="w-3.5 h-3.5 flex-shrink-0" />
                     <span className="truncate">
@@ -236,13 +263,11 @@ export default function AdminUsersPage() {
                     </span>
                   </div>
 
-                  {/* Session */}
                   <div className="col-span-2 flex items-center gap-1.5 text-content-secondary text-xs">
                     <CalendarDays className="w-3.5 h-3.5 flex-shrink-0" />
                     <span>{session?.label ?? "—"}</span>
                   </div>
 
-                  {/* Action */}
                   <div className="col-span-1 flex items-center">
                     <button
                       onClick={() =>
@@ -258,7 +283,6 @@ export default function AdminUsersPage() {
                     </button>
                   </div>
 
-                  {/* Expanded detail */}
                   {selectedUser?.user_id === user.user_id && (
                     <div className="col-span-12 mt-2 p-4 bg-background rounded-xl border border-border space-y-3">
                       <p className="text-content-secondary text-xs font-semibold uppercase tracking-wider">

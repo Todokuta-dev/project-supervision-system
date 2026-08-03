@@ -1,7 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import { mockSessions } from "@/lib/mock-data";
+import { useEffect, useState } from "react";
+import {
+  getAllSessions,
+  createSession,
+  updateSession,
+  setActiveSession,
+  deleteSession,
+} from "@/lib/services/reference.service";
 import { AcademicSession } from "@/lib/types";
 import { motion } from "framer-motion";
 import {
@@ -29,7 +35,8 @@ const cardVariants = {
 };
 
 export default function AdminSessionsPage() {
-  const [sessions, setSessions] = useState<AcademicSession[]>(mockSessions);
+  const [sessions, setSessions] = useState<AcademicSession[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingSession, setEditingSession] = useState<AcademicSession | null>(null);
   const [formData, setFormData] = useState({
@@ -42,9 +49,20 @@ export default function AdminSessionsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
+  useEffect(() => {
+    const fetchSessions = async () => {
+      setIsLoading(true);
+      try {
+        const data = await getAllSessions();
+        setSessions(data);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchSessions();
+  }, []);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
       ...prev,
@@ -100,74 +118,81 @@ export default function AdminSessionsPage() {
     }
 
     setIsSubmitting(true);
-    await new Promise((res) => setTimeout(res, 600));
-
-    if (editingSession) {
-      setSessions((prev) =>
-        prev.map((s) => {
-          if (s.session_id === editingSession.session_id) {
-            return {
-              ...s,
-              label: formData.label.trim(),
-              start_date: formData.start_date,
-              end_date: formData.end_date,
-              // If setting this as active, deactivate others
-              is_active: formData.is_active,
-            };
-          }
-          // Deactivate other sessions if this one is being set active
-          if (formData.is_active) return { ...s, is_active: false };
-          return s;
-        })
+    try {
+      if (editingSession) {
+        const updated = await updateSession(editingSession.session_id, {
+          label: formData.label.trim(),
+          start_date: formData.start_date,
+          end_date: formData.end_date,
+          is_active: formData.is_active,
+        });
+        // Backend deactivates other sessions atomically if this one goes
+        // active — refetch to reflect the authoritative state across all rows.
+        const refreshed = await getAllSessions();
+        setSessions(refreshed);
+        setSuccessMsg("Session updated successfully.");
+        void updated;
+      } else {
+        await createSession({
+          label: formData.label.trim(),
+          start_date: formData.start_date,
+          end_date: formData.end_date,
+          is_active: formData.is_active,
+        });
+        const refreshed = await getAllSessions();
+        setSessions(refreshed);
+        setSuccessMsg("Session created successfully.");
+      }
+      handleClose();
+      setTimeout(() => setSuccessMsg(""), 3000);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Something went wrong. Please try again."
       );
-      setSuccessMsg("Session updated successfully.");
-    } else {
-      const newSession: AcademicSession = {
-        session_id: `session_${Date.now()}`,
-        label: formData.label.trim(),
-        start_date: formData.start_date,
-        end_date: formData.end_date,
-        is_active: formData.is_active,
-      };
-
-      setSessions((prev) => {
-        // Deactivate others if new one is active
-        const updated = formData.is_active
-          ? prev.map((s) => ({ ...s, is_active: false }))
-          : prev;
-        return [...updated, newSession];
-      });
-      setSuccessMsg("Session created successfully.");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setIsSubmitting(false);
-    handleClose();
-    setTimeout(() => setSuccessMsg(""), 3000);
   };
 
-  const handleSetActive = (sessionId: string) => {
-    setSessions((prev) =>
-      prev.map((s) => ({ ...s, is_active: s.session_id === sessionId }))
-    );
-    setSuccessMsg("Active session updated.");
-    setTimeout(() => setSuccessMsg(""), 3000);
+  const handleSetActive = async (sessionId: string) => {
+    try {
+      await setActiveSession(sessionId);
+      const refreshed = await getAllSessions();
+      setSessions(refreshed);
+      setSuccessMsg("Active session updated.");
+      setTimeout(() => setSuccessMsg(""), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to set active session.");
+      setTimeout(() => setError(""), 3000);
+    }
   };
 
-  const handleDelete = (session: AcademicSession) => {
+  const handleDelete = async (session: AcademicSession) => {
     if (session.is_active) {
-      setSuccessMsg("");
       setError("Cannot delete the active session.");
       setTimeout(() => setError(""), 3000);
       return;
     }
-    setSessions((prev) =>
-      prev.filter((s) => s.session_id !== session.session_id)
-    );
-    setSuccessMsg(`Session "${session.label}" deleted.`);
-    setTimeout(() => setSuccessMsg(""), 3000);
+    try {
+      await deleteSession(session.session_id);
+      setSessions((prev) => prev.filter((s) => s.session_id !== session.session_id));
+      setSuccessMsg(`Session "${session.label}" deleted.`);
+      setTimeout(() => setSuccessMsg(""), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete session.");
+      setTimeout(() => setError(""), 3000);
+    }
   };
 
   const activeSession = sessions.find((s) => s.is_active);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <motion.div
@@ -263,7 +288,6 @@ export default function AdminSessionsPage() {
       >
         {sessions.length > 0 ? (
           <div className="divide-y divide-border">
-            {/* Header */}
             <div className="grid grid-cols-12 gap-4 px-6 py-3 bg-background">
               <p className="col-span-3 text-content-secondary text-xs font-semibold uppercase tracking-wider">
                 Session

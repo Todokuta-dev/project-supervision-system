@@ -1,16 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { searchRepository } from "@/lib/services/repository.service";
-import { RepositoryItem } from "@/lib/types";
-import { mockDepartments, mockSessions, mockUsers } from "@/lib/mock-data";
+import { searchRepository, deleteRepositoryItem } from "@/lib/services/repository.service";
+import { getDepartments, getActiveSession } from "@/lib/services/reference.service";
+import { getUsers } from "@/lib/services/users.service";
+import { RepositoryItem, Department, AcademicSession, User } from "@/lib/types";
 import { motion } from "framer-motion";
 import {
   Library,
   Search,
   Filter,
   BookOpen,
-  User,
+  User as UserIcon,
   Building2,
   CalendarDays,
   Download,
@@ -34,6 +35,9 @@ const cardVariants = {
 
 export default function AdminRepositoryPage() {
   const [items, setItems] = useState<RepositoryItem[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [activeSession, setActiveSession] = useState<AcademicSession | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [keyword, setKeyword] = useState("");
   const [selectedDept, setSelectedDept] = useState("");
@@ -45,8 +49,16 @@ export default function AdminRepositoryPage() {
     const fetchAll = async () => {
       setIsLoading(true);
       try {
-        const data = await searchRepository();
+        const [data, allDepartments, session, allUsers] = await Promise.all([
+          searchRepository(),
+          getDepartments(),
+          getActiveSession().catch(() => null),
+          getUsers(),
+        ]);
         setItems(data);
+        setDepartments(allDepartments);
+        setActiveSession(session);
+        setUsers(allUsers);
       } finally {
         setIsLoading(false);
       }
@@ -84,8 +96,13 @@ export default function AdminRepositoryPage() {
     }
   };
 
-  const handleDelete = (repoId: string) => {
-    setItems((prev) => prev.filter((i) => i.repo_id !== repoId));
+  const handleDelete = async (repoId: string) => {
+    try {
+      await deleteRepositoryItem(repoId);
+      setItems((prev) => prev.filter((i) => i.repo_id !== repoId));
+    } catch {
+      // Silently ignore for now — item stays in the list if delete failed
+    }
   };
 
   const hasActiveFilters = keyword || selectedDept || selectedSession;
@@ -121,7 +138,7 @@ export default function AdminRepositoryPage() {
           className="bg-background-surface rounded-2xl border border-border p-4 text-center"
         >
           <p className="text-2xl font-bold text-content-primary">
-            {mockDepartments.length}
+            {departments.length}
           </p>
           <p className="text-content-secondary text-xs mt-1">Departments</p>
         </motion.div>
@@ -130,7 +147,7 @@ export default function AdminRepositoryPage() {
           className="bg-background-surface rounded-2xl border border-border p-4 text-center"
         >
           <p className="text-2xl font-bold text-content-primary">
-            {mockSessions.length}
+            {activeSession ? 1 : 0}
           </p>
           <p className="text-content-secondary text-xs mt-1">Sessions</p>
         </motion.div>
@@ -190,7 +207,7 @@ export default function AdminRepositoryPage() {
                   className="w-full px-3 py-2 rounded-xl border border-border text-content-primary bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition"
                 >
                   <option value="">All Departments</option>
-                  {mockDepartments.map((dept) => (
+                  {departments.map((dept) => (
                     <option
                       key={dept.department_id}
                       value={dept.department_id}
@@ -210,15 +227,11 @@ export default function AdminRepositoryPage() {
                   className="w-full px-3 py-2 rounded-xl border border-border text-content-primary bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition"
                 >
                   <option value="">All Sessions</option>
-                  {mockSessions.map((session) => (
-                    <option
-                      key={session.session_id}
-                      value={session.session_id}
-                    >
-                      {session.label}
-                      {session.is_active ? " (Current)" : ""}
+                  {activeSession && (
+                    <option value={activeSession.session_id}>
+                      {activeSession.label} (Current)
                     </option>
-                  ))}
+                  )}
                 </select>
               </div>
             </motion.div>
@@ -240,9 +253,8 @@ export default function AdminRepositoryPage() {
               )}
               {selectedDept && (
                 <span className="inline-flex items-center gap-1 bg-primary/10 text-primary text-xs font-medium px-2.5 py-1 rounded-full border border-primary/20">
-                  {mockDepartments.find(
-                    (d) => d.department_id === selectedDept
-                  )?.code ?? selectedDept}
+                  {departments.find((d) => d.department_id === selectedDept)
+                    ?.code ?? selectedDept}
                   <button onClick={() => setSelectedDept("")}>
                     <X className="w-3 h-3" />
                   </button>
@@ -250,9 +262,9 @@ export default function AdminRepositoryPage() {
               )}
               {selectedSession && (
                 <span className="inline-flex items-center gap-1 bg-primary/10 text-primary text-xs font-medium px-2.5 py-1 rounded-full border border-primary/20">
-                  {mockSessions.find(
-                    (s) => s.session_id === selectedSession
-                  )?.label ?? selectedSession}
+                  {activeSession?.session_id === selectedSession
+                    ? activeSession.label
+                    : selectedSession}
                   <button onClick={() => setSelectedSession("")}>
                     <X className="w-3 h-3" />
                   </button>
@@ -306,16 +318,17 @@ export default function AdminRepositoryPage() {
           {items.length > 0 ? (
             <div className="space-y-4">
               {items.map((item) => {
-                const department = mockDepartments.find(
+                const department = departments.find(
                   (d) => d.department_id === item.department_id
                 );
-                const session = mockSessions.find(
-                  (s) => s.session_id === item.session_id
-                );
-                const student = mockUsers.find(
+                const session =
+                  activeSession?.session_id === item.session_id
+                    ? activeSession
+                    : null;
+                const student = users.find(
                   (u) => u.user_id === item.student_id
                 );
-                const supervisor = mockUsers.find(
+                const supervisor = users.find(
                   (u) => u.user_id === item.supervisor_id
                 );
 
@@ -387,11 +400,11 @@ export default function AdminRepositoryPage() {
                     {/* Footer */}
                     <div className="flex items-center gap-4 pt-1 border-t border-border flex-wrap">
                       <div className="flex items-center gap-1.5 text-content-secondary text-xs">
-                        <User className="w-3.5 h-3.5" />
+                        <UserIcon className="w-3.5 h-3.5" />
                         {student?.full_name ?? "Unknown"}
                       </div>
                       <div className="flex items-center gap-1.5 text-content-secondary text-xs">
-                        <User className="w-3.5 h-3.5" />
+                        <UserIcon className="w-3.5 h-3.5" />
                         Supervised by{" "}
                         <span className="text-content-primary font-medium ml-1">
                           {supervisor?.full_name ?? "Unknown"}

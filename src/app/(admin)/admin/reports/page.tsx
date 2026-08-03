@@ -4,12 +4,19 @@ import { useEffect, useState } from "react";
 import { getProjects } from "@/lib/services/projects.service";
 import { getApprovals } from "@/lib/services/approvals.service";
 import { searchRepository } from "@/lib/services/repository.service";
-import { Project, Approval, RepositoryItem } from "@/lib/types";
-import { mockUsers, mockDepartments, mockSessions } from "@/lib/mock-data";
+import { getUsers } from "@/lib/services/users.service";
+import { getDepartments, getActiveSession } from "@/lib/services/reference.service";
+import {
+  Project,
+  Approval,
+  RepositoryItem,
+  User,
+  Department,
+  AcademicSession,
+} from "@/lib/types";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { motion } from "framer-motion";
 import {
-  BarChart3,
   Users,
   FolderOpen,
   Library,
@@ -97,20 +104,30 @@ export default function AdminReportsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [approvals, setApprovals] = useState<Approval[]>([]);
   const [repoItems, setRepoItems] = useState<RepositoryItem[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [activeSession, setActiveSession] = useState<AcademicSession | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const [allProjects, allApprovals, allRepo] = await Promise.all([
-          getProjects(),
-          getApprovals(),
-          searchRepository(),
-        ]);
+        const [allProjects, allApprovals, allRepo, allUsers, allDepartments, session] =
+          await Promise.all([
+            getProjects(),
+            getApprovals(),
+            searchRepository(),
+            getUsers(),
+            getDepartments(),
+            getActiveSession().catch(() => null),
+          ]);
         setProjects(allProjects);
         setApprovals(allApprovals);
         setRepoItems(allRepo);
+        setUsers(allUsers);
+        setDepartments(allDepartments);
+        setActiveSession(session);
       } finally {
         setIsLoading(false);
       }
@@ -126,13 +143,10 @@ export default function AdminReportsPage() {
     );
   }
 
-  const totalStudents = mockUsers.filter((u) => u.role === "student").length;
-  const totalSupervisors = mockUsers.filter(
-    (u) => u.role === "supervisor"
-  ).length;
-  const activeSession = mockSessions.find((s) => s.is_active);
+  const totalStudents = users.filter((u) => u.role === "student").length;
+  const totalSupervisors = users.filter((u) => u.role === "supervisor").length;
+  const totalAdmins = users.filter((u) => u.role === "admin").length;
 
-  // Projects by status
   const byStatus = {
     topic_pending: projects.filter((p) => p.status === "topic_pending").length,
     under_review: projects.filter((p) => p.status === "under_review").length,
@@ -143,22 +157,26 @@ export default function AdminReportsPage() {
     archived: projects.filter((p) => p.status === "archived").length,
   };
 
-  // Projects by department
-  const byDepartment = mockDepartments.map((dept) => ({
+  const byDepartment = departments.map((dept) => ({
     dept,
     count: projects.filter((p) => p.department_id === dept.department_id)
       .length,
   }));
 
-  // Projects by session
-  const bySession = mockSessions.map((session) => ({
-    session,
-    count: projects.filter((p) => p.session_id === session.session_id).length,
-    repoCount: repoItems.filter((r) => r.session_id === session.session_id)
-      .length,
-  }));
+  // Only the active session is available (no "list all sessions" endpoint
+  // exists yet), so this table shows just that one row rather than a
+  // fabricated multi-session history.
+  const sessionRow = activeSession
+    ? {
+        session: activeSession,
+        count: projects.filter((p) => p.session_id === activeSession.session_id)
+          .length,
+        repoCount: repoItems.filter(
+          (r) => r.session_id === activeSession.session_id
+        ).length,
+      }
+    : null;
 
-  // Approval stats
   const approvalStats = {
     pending: approvals.filter((a) => a.status === "pending").length,
     approved: approvals.filter((a) => a.status === "approved").length,
@@ -188,7 +206,7 @@ export default function AdminReportsPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           label="Total Users"
-          value={mockUsers.length}
+          value={users.length}
           icon={Users}
           accent
           sub={`${totalStudents} students · ${totalSupervisors} supervisors`}
@@ -260,7 +278,6 @@ export default function AdminReportsPage() {
 
       {/* Middle row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-
         {/* Projects by department */}
         <motion.div
           variants={cardVariants}
@@ -356,7 +373,6 @@ export default function AdminReportsPage() {
             ))}
           </div>
 
-          {/* Total */}
           <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">
             <span className="text-content-secondary text-sm">
               Total Approvals
@@ -379,58 +395,60 @@ export default function AdminReportsPage() {
             Breakdown by Academic Session
           </h2>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-border">
-                <th className="text-left text-content-secondary text-xs font-semibold uppercase tracking-wider pb-3">
-                  Session
-                </th>
-                <th className="text-left text-content-secondary text-xs font-semibold uppercase tracking-wider pb-3">
-                  Projects
-                </th>
-                <th className="text-left text-content-secondary text-xs font-semibold uppercase tracking-wider pb-3">
-                  Repository
-                </th>
-                <th className="text-left text-content-secondary text-xs font-semibold uppercase tracking-wider pb-3">
-                  Status
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {bySession.map(({ session, count, repoCount }) => (
-                <tr key={session.session_id} className="hover:bg-background transition">
+        {sessionRow ? (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="text-left text-content-secondary text-xs font-semibold uppercase tracking-wider pb-3">
+                    Session
+                  </th>
+                  <th className="text-left text-content-secondary text-xs font-semibold uppercase tracking-wider pb-3">
+                    Projects
+                  </th>
+                  <th className="text-left text-content-secondary text-xs font-semibold uppercase tracking-wider pb-3">
+                    Repository
+                  </th>
+                  <th className="text-left text-content-secondary text-xs font-semibold uppercase tracking-wider pb-3">
+                    Status
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                <tr className="hover:bg-background transition">
                   <td className="py-3 pr-4">
                     <p className="text-content-primary text-sm font-semibold">
-                      {session.label}
+                      {sessionRow.session.label}
                     </p>
                   </td>
                   <td className="py-3 pr-4">
                     <span className="text-content-primary text-sm font-bold">
-                      {count}
+                      {sessionRow.count}
                     </span>
                   </td>
                   <td className="py-3 pr-4">
                     <span className="text-content-primary text-sm font-bold">
-                      {repoCount}
+                      {sessionRow.repoCount}
                     </span>
                   </td>
                   <td className="py-3">
-                    {session.is_active ? (
-                      <span className="bg-green-50 text-green-700 text-xs font-semibold px-2.5 py-1 rounded-full border border-green-200">
-                        Active
-                      </span>
-                    ) : (
-                      <span className="bg-gray-50 text-gray-500 text-xs font-medium px-2.5 py-1 rounded-full border border-gray-200">
-                        Inactive
-                      </span>
-                    )}
+                    <span className="bg-green-50 text-green-700 text-xs font-semibold px-2.5 py-1 rounded-full border border-green-200">
+                      Active
+                    </span>
                   </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </tbody>
+            </table>
+            <p className="text-content-secondary text-xs mt-3">
+              Only the active session is shown — historical session records
+              aren&apos;t tracked separately yet.
+            </p>
+          </div>
+        ) : (
+          <p className="text-content-secondary text-sm">
+            No active academic session found.
+          </p>
+        )}
       </motion.div>
 
       {/* Users breakdown */}
@@ -449,7 +467,6 @@ export default function AdminReportsPage() {
             {
               label: "Students",
               count: totalStudents,
-              color: "bg-blue-500",
               bg: "bg-blue-50",
               text: "text-blue-600",
               border: "border-blue-200",
@@ -457,15 +474,13 @@ export default function AdminReportsPage() {
             {
               label: "Supervisors",
               count: totalSupervisors,
-              color: "bg-primary",
               bg: "bg-primary/5",
               text: "text-primary",
               border: "border-primary/20",
             },
             {
               label: "Admins",
-              count: mockUsers.filter((u) => u.role === "admin").length,
-              color: "bg-accent",
+              count: totalAdmins,
               bg: "bg-accent/10",
               text: "text-accent-dark",
               border: "border-accent/20",

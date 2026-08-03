@@ -72,3 +72,9 @@ export async function archiveToRepository(
 
   return match;
 }
+
+export async function deleteRepositoryItem(repo_id: string): Promise<void> {
+  await apiFetch<void>(`/repository-items/${repo_id}`, {
+    method: "DELETE",
+  });
+}

@@ -5,8 +5,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { getProjects } from "@/lib/services/projects.service";
 import { getSubmissions } from "@/lib/services/submissions.service";
 import { getFeedback } from "@/lib/services/feedback.service";
-import { Project, Submission, Feedback } from "@/lib/types";
-import { mockUsers } from "@/lib/mock-data";
+import { getUsers } from "@/lib/services/users.service";
+import { Project, Submission, Feedback, User } from "@/lib/types";
 import { motion } from "framer-motion";
 import {
   MessageSquare,
@@ -58,6 +58,7 @@ export default function FeedbackPage() {
   const [project, setProject] = useState<Project | null>(null);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [feedbackList, setFeedbackList] = useState<Feedback[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "approve" | "correction_required">("all");
 
@@ -66,6 +67,9 @@ export default function FeedbackPage() {
     const fetchData = async () => {
       setIsLoading(true);
       try {
+        const allUsers = await getUsers();
+        setUsers(allUsers);
+
         const projects = await getProjects({ student_id: user.user_id });
         const active = projects[0] ?? null;
         setProject(active);
@@ -128,7 +132,6 @@ export default function FeedbackPage() {
         </p>
       </motion.div>
 
-      {/* No project state */}
       {!project && (
         <motion.div
           variants={cardVariants}
@@ -154,7 +157,6 @@ export default function FeedbackPage() {
 
       {project && (
         <>
-          {/* Stats row */}
           <div className="grid grid-cols-3 gap-4">
             <motion.div
               variants={cardVariants}
@@ -189,7 +191,6 @@ export default function FeedbackPage() {
             </motion.div>
           </div>
 
-          {/* Filter tabs */}
           <motion.div
             variants={cardVariants}
             className="flex items-center gap-2"
@@ -217,14 +218,13 @@ export default function FeedbackPage() {
             ))}
           </motion.div>
 
-          {/* Feedback list */}
           {sortedFeedback.length > 0 ? (
             <div className="space-y-4">
               {sortedFeedback.map((fb) => {
                 const sub = submissions.find(
                   (s) => s.submission_id === fb.submission_id
                 );
-                const supervisor = mockUsers.find(
+                const supervisor = users.find(
                   (u) => u.user_id === fb.supervisor_id
                 );
 
@@ -234,7 +234,6 @@ export default function FeedbackPage() {
                     variants={cardVariants}
                     className="bg-background-surface rounded-2xl border border-border p-5 space-y-4"
                   >
-                    {/* Feedback header */}
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
@@ -265,7 +264,6 @@ export default function FeedbackPage() {
                       <DecisionBadge decision={fb.decision} />
                     </div>
 
-                    {/* Submission reference */}
                     {sub && (
                       <div className="flex items-center gap-2 px-3 py-2 bg-background rounded-xl border border-border">
                         <FileText className="w-4 h-4 text-content-secondary flex-shrink-0" />
@@ -287,7 +285,6 @@ export default function FeedbackPage() {
                       </div>
                     )}
 
-                    {/* Comment */}
                     <div className="space-y-1">
                       <p className="text-content-secondary text-xs font-semibold uppercase tracking-wider">
                         Comments
@@ -297,7 +294,6 @@ export default function FeedbackPage() {
                       </p>
                     </div>
 
-                    {/* Action if correction required */}
                     {fb.decision === "correction_required" && (
                       <div className="pt-1">
                         <Link
