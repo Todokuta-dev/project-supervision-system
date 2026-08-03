@@ -2,18 +2,21 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useAuth } from "@/hooks/useAuth";
 import { getProjectById } from "@/lib/services/projects.service";
 import { getSubmissions } from "@/lib/services/submissions.service";
 import { getFeedback } from "@/lib/services/feedback.service";
 import { getSimilarityReport } from "@/lib/services/similarity.service";
+import { getUsers } from "@/lib/services/users.service";
+import { getDepartments, getAllSessions } from "@/lib/services/reference.service";
 import {
   Project,
   Submission,
   Feedback,
   SimilarityReport,
+  User,
+  Department,
+  AcademicSession,
 } from "@/lib/types";
-import { mockUsers, mockDepartments, mockSessions } from "@/lib/mock-data";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { motion } from "framer-motion";
 import {
@@ -22,7 +25,7 @@ import {
   MessageSquare,
   ShieldCheck,
   Clock,
-  User,
+  User as UserIcon,
   Building2,
   CalendarDays,
   CheckCircle2,
@@ -46,7 +49,6 @@ const cardVariants = {
   },
 };
 
-// --- Status Timeline ---
 const statusSteps = [
   { key: "topic_pending", label: "Topic Submitted" },
   { key: "under_review", label: "Under Review" },
@@ -111,7 +113,6 @@ function StatusTimeline({ currentStatus }: { currentStatus: string }) {
   );
 }
 
-// --- Decision Badge ---
 function DecisionBadge({ decision }: { decision: string }) {
   const isApproved = decision === "approve";
   return (
@@ -133,7 +134,6 @@ function DecisionBadge({ decision }: { decision: string }) {
 }
 
 export default function ProjectDetailPage() {
-  const { user } = useAuth();
   const params = useParams();
   const router = useRouter();
   const projectId = params.id as string;
@@ -143,19 +143,31 @@ export default function ProjectDetailPage() {
   const [feedbackList, setFeedbackList] = useState<Feedback[]>([]);
   const [similarityReport, setSimilarityReport] =
     useState<SimilarityReport | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [sessions, setSessions] = useState<AcademicSession[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-const [activeTab, setActiveTab] = useState<"overview" | "submissions" | "feedback">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "submissions" | "feedback">("overview");
 
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const proj = await getProjectById(projectId);
+        const [proj, allUsers, allDepartments, allSessions] = await Promise.all([
+          getProjectById(projectId),
+          getUsers(),
+          getDepartments(),
+          getAllSessions().catch(() => []),
+        ]);
+
         if (!proj) {
           router.replace("/student/dashboard");
           return;
         }
         setProject(proj);
+        setUsers(allUsers);
+        setDepartments(allDepartments);
+        setSessions(allSessions);
 
         const subs = await getSubmissions({ project_id: projectId });
         setSubmissions(subs);
@@ -190,11 +202,11 @@ const [activeTab, setActiveTab] = useState<"overview" | "submissions" | "feedbac
 
   if (!project) return null;
 
-  const supervisor = mockUsers.find((u) => u.user_id === project.supervisor_id);
-  const department = mockDepartments.find(
+  const supervisor = users.find((u) => u.user_id === project.supervisor_id);
+  const department = departments.find(
     (d) => d.department_id === project.department_id
   );
-  const session = mockSessions.find((s) => s.session_id === project.session_id);
+  const session = sessions.find((s) => s.session_id === project.session_id);
 
   const tabs = [
     { key: "overview", label: "Overview", icon: FileText },
@@ -237,10 +249,9 @@ const [activeTab, setActiveTab] = useState<"overview" | "submissions" | "feedbac
           <StatusBadge status={project.status} />
         </div>
 
-        {/* Meta info */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-4 pt-4 border-t border-border">
           <div className="flex items-center gap-2">
-            <User className="w-4 h-4 text-content-secondary flex-shrink-0" />
+            <UserIcon className="w-4 h-4 text-content-secondary flex-shrink-0" />
             <div>
               <p className="text-content-secondary text-xs">Supervisor</p>
               <p className="text-content-primary text-sm font-medium">
@@ -357,7 +368,6 @@ const [activeTab, setActiveTab] = useState<"overview" | "submissions" | "feedbac
             </Link>
           </div>
 
-          {/* Matched sources */}
           {similarityReport.matched_sources.length > 0 && (
             <div className="mt-4 space-y-2">
               {similarityReport.matched_sources.map((source, index) => (
@@ -414,7 +424,6 @@ const [activeTab, setActiveTab] = useState<"overview" | "submissions" | "feedbac
         variants={cardVariants}
         className="bg-background-surface rounded-2xl border border-border p-6"
       >
-        {/* Overview Tab */}
         {activeTab === "overview" && (
           <div className="space-y-4">
             <h2 className="text-content-primary font-bold text-base">
@@ -475,7 +484,6 @@ const [activeTab, setActiveTab] = useState<"overview" | "submissions" | "feedbac
           </div>
         )}
 
-        {/* Submissions Tab */}
         {activeTab === "submissions" && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -561,7 +569,6 @@ const [activeTab, setActiveTab] = useState<"overview" | "submissions" | "feedbac
           </div>
         )}
 
-        {/* Feedback Tab */}
         {activeTab === "feedback" && (
           <div className="space-y-4">
             <h2 className="text-content-primary font-bold text-base">
