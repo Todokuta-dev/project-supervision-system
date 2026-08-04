@@ -32,11 +32,22 @@ export async function getSubmissionById(
   }
 }
 
-export async function createSubmission(
-  data: Omit<Submission, "submission_id" | "submitted_at">
-): Promise<Submission> {
+export async function createSubmission(data: {
+  project_id: string;
+  submission_type: string;
+  chapter_label?: string;
+  file: File;
+}): Promise<Submission> {
+  const formData = new FormData();
+  formData.append("project_id", data.project_id);
+  formData.append("submission_type", data.submission_type);
+  if (data.chapter_label) {
+    formData.append("chapter_label", data.chapter_label);
+  }
+  formData.append("file", data.file);
+
   return apiFetch<Submission>("/submissions", {
     method: "POST",
-    body: data,
+    body: formData,
   });
 }
