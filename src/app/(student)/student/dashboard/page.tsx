@@ -127,64 +127,171 @@ function DecisionBadge({ decision }: { decision: string }) {
 // based on the project's current status.
 function NextStepGuidance({
   status,
-  hasSubmissions,
+  submissions,
+  feedbackList,
   hasSupervisor,
 }: {
   status: ProjectStatus;
-  hasSubmissions: boolean;
+  submissions: Submission[];
+  feedbackList: Feedback[];
   hasSupervisor: boolean;
 }) {
-  const config: Record<ProjectStatus, { message: string; action?: { label: string; href: string } }> = {
-    topic_pending: {
-      message:
-        "Your topic proposal has been submitted and is awaiting review. No action needed yet — check back soon.",
-    },
-    under_review: {
-      message: hasSupervisor
-        ? hasSubmissions
-          ? "Your topic was approved and you're now under supervision. Keep submitting chapters as you make progress."
-          : "Your topic was approved! You've been assigned a supervisor — go ahead and submit your first chapter."
-        : "Your topic was approved and is awaiting supervisor assignment. You'll be notified once one is assigned.",
-      action:
-        hasSupervisor && !hasSubmissions
-          ? { label: "Submit Chapter One", href: "/student/submissions" }
-          : hasSupervisor
-          ? { label: "Upload Next Chapter", href: "/student/submissions" }
-          : undefined,
-    },
-    correction_required: {
-      message:
-        "Your supervisor has requested changes. Review the feedback below and resubmit a revised chapter.",
-      action: { label: "View Feedback", href: "/student/feedback" },
-    },
-    approved: {
-      message:
-        "Your final project has been approved. Great work — it will be archived to the digital repository shortly.",
-    },
-    archived: {
-      message:
-        "Your project is complete and archived in the digital repository. Congratulations!",
-      action: { label: "View in Repository", href: "/student/repository" },
-    },
-  };
-
-  const { message, action } = config[status];
-
-  return (
-    <div className="flex items-start gap-3 p-4 bg-primary/5 border border-primary/20 rounded-xl">
-      <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-        <Info className="w-4 h-4 text-primary" />
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-content-primary text-sm leading-relaxed">
-          {message}
-        </p>
-        {action && (
+  if (status === "archived") {
+    return (
+      <div className="flex items-start gap-3 p-4 bg-green-50 border border-green-200 rounded-xl">
+        <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+          <CheckCircle2 className="w-4 h-4 text-green-600" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-green-700 text-sm font-semibold">
+            🎉 Congratulations — your final project has been approved and archived!
+          </p>
+          <p className="text-green-600 text-xs mt-1 leading-relaxed">
+            Your project is now permanently part of the digital repository. No further submissions are needed.
+          </p>
           <Link
-            href={action.href}
+            href="/student/repository"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-green-700 hover:text-green-800 transition mt-2"
+          >
+            View in Repository
+            <ArrowRight className="w-3 h-3" />
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (status === "topic_pending") {
+    return (
+      <div className="flex items-start gap-3 p-4 bg-primary/5 border border-primary/20 rounded-xl">
+        <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+          <Info className="w-4 h-4 text-primary" />
+        </div>
+        <p className="text-content-primary text-sm leading-relaxed">
+          Your topic proposal has been submitted and is awaiting review. No action needed yet — check back soon.
+        </p>
+      </div>
+    );
+  }
+
+  if (status === "correction_required") {
+    return (
+      <div className="flex items-start gap-3 p-4 bg-primary/5 border border-primary/20 rounded-xl">
+        <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+          <Info className="w-4 h-4 text-primary" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-content-primary text-sm leading-relaxed">
+            Your topic proposal needs revision. Review the feedback and resubmit.
+          </p>
+          <Link
+            href="/student/feedback"
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary-light transition mt-2"
           >
-            {action.label}
+            View Feedback
+            <ArrowRight className="w-3 h-3" />
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // status is "under_review" or "approved" — the interesting, granular part.
+  // Figure out where the student actually stands based on their latest submission.
+  if (!hasSupervisor) {
+    return (
+      <div className="flex items-start gap-3 p-4 bg-primary/5 border border-primary/20 rounded-xl">
+        <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+          <Info className="w-4 h-4 text-primary" />
+        </div>
+        <p className="text-content-primary text-sm leading-relaxed">
+          Your topic was approved and is awaiting supervisor assignment. You'll be notified once one is assigned.
+        </p>
+      </div>
+    );
+  }
+
+  if (submissions.length === 0) {
+    return (
+      <div className="flex items-start gap-3 p-4 bg-primary/5 border border-primary/20 rounded-xl">
+        <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+          <Info className="w-4 h-4 text-primary" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-content-primary text-sm leading-relaxed">
+            Your topic was approved! You've been assigned a supervisor — go ahead and submit your first chapter.
+          </p>
+          <Link
+            href="/student/submissions"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary-light transition mt-2"
+          >
+            Submit Chapter One
+            <ArrowRight className="w-3 h-3" />
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const latest = [...submissions].sort(
+    (a, b) => new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime()
+  )[0];
+  const latestFeedback = feedbackList.find((f) => f.submission_id === latest.submission_id);
+
+  if (!latestFeedback) {
+    return (
+      <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+        <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center flex-shrink-0">
+          <Clock className="w-4 h-4 text-amber-600" />
+        </div>
+        <p className="text-amber-700 text-sm leading-relaxed">
+          <span className="font-semibold">{latest.chapter_label}</span> has been submitted and is awaiting your supervisor's review.
+        </p>
+      </div>
+    );
+  }
+
+  if (latestFeedback.decision === "correction_required") {
+    return (
+      <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-xl">
+        <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
+          <AlertCircle className="w-4 h-4 text-red-600" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-red-700 text-sm leading-relaxed">
+            <span className="font-semibold">{latest.chapter_label}</span> needs correction. Review your supervisor's feedback and resubmit.
+          </p>
+          <Link
+            href="/student/feedback"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-red-700 hover:text-red-800 transition mt-2"
+          >
+            View Feedback
+            <ArrowRight className="w-3 h-3" />
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // latest feedback is "approve"
+  const isFinal = latest.submission_type === "final_submission";
+  return (
+    <div className="flex items-start gap-3 p-4 bg-green-50 border border-green-200 rounded-xl">
+      <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+        <CheckCircle2 className="w-4 h-4 text-green-600" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-green-700 text-sm leading-relaxed">
+          {isFinal
+            ? "Your final submission has been approved by your supervisor! It's now awaiting final sign-off from the admin."
+            : `${latest.chapter_label} has been approved! Continue with your next chapter whenever you're ready.`}
+        </p>
+        {!isFinal && (
+          <Link
+            href="/student/submissions"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-green-700 hover:text-green-800 transition mt-2"
+          >
+            Submit Next Chapter
             <ArrowRight className="w-3 h-3" />
           </Link>
         )}
