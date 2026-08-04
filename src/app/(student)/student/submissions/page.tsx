@@ -128,31 +128,32 @@ export default function SubmissionsPage() {
     setSelectedFile(file);
   };
 
-  const handleUpload = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!project || !selectedFile || !user) return;
+const handleUpload = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (!project || !selectedFile || !user) return;
 
-    setIsSubmitting(true);
-    try {
-      const newSub = await createSubmission({
-        project_id: project.project_id,
-        submission_type: selectedChapter.value,
-        chapter_label: selectedChapter.label,
-        file_path: `/uploads/${selectedFile.name}`,
-        file_name: selectedFile.name,
-      });
+  setIsSubmitting(true);
+  try {
+    const newSub = await createSubmission({
+      project_id: project.project_id,
+      submission_type: selectedChapter.value,
+      chapter_label: selectedChapter.label,
+      file: selectedFile,
+    });
 
-      setSubmissions((prev) => [...prev, newSub]);
-      setSubmitSuccess(true);
-      setShowUploadForm(false);
-      setSelectedFile(null);
-      setSubmitSuccess(false);
-    } catch {
-      setFileError("Upload failed. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+    setSubmissions((prev) => [...prev, newSub]);
+    setSubmitSuccess(true);
+    setShowUploadForm(false);
+    setSelectedFile(null);
+    setTimeout(() => setSubmitSuccess(false), 3000);
+  } catch (err) {
+    setFileError(
+      err instanceof Error ? err.message : "Upload failed. Please try again."
+    );
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   if (isLoading) {
     return (
