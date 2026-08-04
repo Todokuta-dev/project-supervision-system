@@ -6,7 +6,7 @@ import { getProjects } from "@/lib/services/projects.service";
 import { getSubmissions } from "@/lib/services/submissions.service";
 import { getFeedback } from "@/lib/services/feedback.service";
 import { getSimilarityReport } from "@/lib/services/similarity.service";
-import { Project, Submission, Feedback, SimilarityReport } from "@/lib/types";
+import { Project, Submission, Feedback, SimilarityReport, ProjectStatus } from "@/lib/types";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { motion } from "framer-motion";
 import {
@@ -19,6 +19,7 @@ import {
   CheckCircle2,
   AlertCircle,
   BookOpen,
+  Info,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -121,6 +122,77 @@ function DecisionBadge({ decision }: { decision: string }) {
   );
 }
 
+// --- Next Step Guidance ---
+// Tells the student exactly what's happened and what to do next,
+// based on the project's current status.
+function NextStepGuidance({
+  status,
+  hasSubmissions,
+  hasSupervisor,
+}: {
+  status: ProjectStatus;
+  hasSubmissions: boolean;
+  hasSupervisor: boolean;
+}) {
+  const config: Record<ProjectStatus, { message: string; action?: { label: string; href: string } }> = {
+    topic_pending: {
+      message:
+        "Your topic proposal has been submitted and is awaiting review. No action needed yet — check back soon.",
+    },
+    under_review: {
+      message: hasSupervisor
+        ? hasSubmissions
+          ? "Your topic was approved and you're now under supervision. Keep submitting chapters as you make progress."
+          : "Your topic was approved! You've been assigned a supervisor — go ahead and submit your first chapter."
+        : "Your topic was approved and is awaiting supervisor assignment. You'll be notified once one is assigned.",
+      action:
+        hasSupervisor && !hasSubmissions
+          ? { label: "Submit Chapter One", href: "/student/submissions" }
+          : hasSupervisor
+          ? { label: "Upload Next Chapter", href: "/student/submissions" }
+          : undefined,
+    },
+    correction_required: {
+      message:
+        "Your supervisor has requested changes. Review the feedback below and resubmit a revised chapter.",
+      action: { label: "View Feedback", href: "/student/feedback" },
+    },
+    approved: {
+      message:
+        "Your final project has been approved. Great work — it will be archived to the digital repository shortly.",
+    },
+    archived: {
+      message:
+        "Your project is complete and archived in the digital repository. Congratulations!",
+      action: { label: "View in Repository", href: "/student/repository" },
+    },
+  };
+
+  const { message, action } = config[status];
+
+  return (
+    <div className="flex items-start gap-3 p-4 bg-primary/5 border border-primary/20 rounded-xl">
+      <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+        <Info className="w-4 h-4 text-primary" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-content-primary text-sm leading-relaxed">
+          {message}
+        </p>
+        {action && (
+          <Link
+            href={action.href}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary-light transition mt-2"
+          >
+            {action.label}
+            <ArrowRight className="w-3 h-3" />
+          </Link>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function StudentDashboard() {
   const { user } = useAuth();
 
@@ -137,7 +209,6 @@ export default function StudentDashboard() {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        // Fetch student's project
         const projects = await getProjects({ student_id: user.user_id });
         const activeProject = projects.find(
           (p) => p.session_id === user.session_id
@@ -145,19 +216,16 @@ export default function StudentDashboard() {
         setProject(activeProject);
 
         if (activeProject) {
-          // Fetch submissions for this project
           const subs = await getSubmissions({
             project_id: activeProject.project_id,
           });
           setSubmissions(subs);
 
-          // Fetch similarity report for latest submission
           if (subs.length > 0) {
             const latestSub = subs[subs.length - 1];
             const report = await getSimilarityReport(latestSub.submission_id);
             setSimilarityReport(report);
 
-            // Fetch feedback for all submissions
             const allFeedback: Feedback[] = [];
             for (const sub of subs) {
               const fb = await getFeedback({
@@ -275,7 +343,7 @@ export default function StudentDashboard() {
         </div>
 
         {project ? (
-          <div className="space-y-3">
+          <div className="space-y-4">
             <div className="flex items-start justify-between gap-4">
               <h3 className="text-content-primary font-semibold text-sm leading-snug flex-1">
                 {project.title}
@@ -296,6 +364,13 @@ export default function StudentDashboard() {
                 })}
               </div>
             </div>
+
+            {/* Next step guidance, keyed on current status */}
+            <NextStepGuidance
+              status={project.status}
+              hasSubmissions={submissions.length > 0}
+              hasSupervisor={!!project.supervisor_id}
+            />
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-10 text-center">
@@ -320,7 +395,6 @@ export default function StudentDashboard() {
 
       {/* --- BOTTOM ROW --- */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-
         {/* Recent Submissions */}
         <motion.div
           variants={cardVariants}

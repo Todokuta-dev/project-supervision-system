@@ -29,9 +29,11 @@ export async function apiFetch<T>(
 ): Promise<T> {
   const { body, skipAuth, headers, ...rest } = options;
 
+  const isFormData = body instanceof FormData;
+
   const finalHeaders: Record<string, string> = {
     Accept: "application/json",
-    "Content-Type": "application/json",
+    ...(isFormData ? {} : { "Content-Type": "application/json" }),
     ...(headers as Record<string, string>),
   };
 
@@ -45,10 +47,9 @@ export async function apiFetch<T>(
   const res = await fetch(`${API_URL}${endpoint}`, {
     ...rest,
     headers: finalHeaders,
-    body: body ? JSON.stringify(body) : undefined,
+    body: isFormData ? body : body ? JSON.stringify(body) : undefined,
   });
 
-  // 204 No Content — nothing to parse
   if (res.status === 204) {
     return undefined as T;
   }
