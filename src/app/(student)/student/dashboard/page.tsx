@@ -473,11 +473,12 @@ export default function StudentDashboard() {
             </div>
 
             {/* Next step guidance, keyed on current status */}
-            <NextStepGuidance
-              status={project.status}
-              hasSubmissions={submissions.length > 0}
-              hasSupervisor={!!project.supervisor_id}
-            />
+           <NextStepGuidance
+  status={project.status}
+  submissions={submissions}
+  feedbackList={feedbackList}
+  hasSupervisor={!!project.supervisor_id}
+/>
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-10 text-center">
