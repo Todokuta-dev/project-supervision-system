@@ -6,7 +6,13 @@ import { getProjects } from "@/lib/services/projects.service";
 import { getSubmissions } from "@/lib/services/submissions.service";
 import { getFeedback } from "@/lib/services/feedback.service";
 import { getSimilarityReport } from "@/lib/services/similarity.service";
-import { Project, Submission, Feedback, SimilarityReport, ProjectStatus } from "@/lib/types";
+import {
+  Project,
+  Submission,
+  Feedback,
+  SimilarityReport,
+  ProjectStatus,
+} from "@/lib/types";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { motion } from "framer-motion";
 import {
@@ -144,10 +150,12 @@ function NextStepGuidance({
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-green-700 text-sm font-semibold">
-            🎉 Congratulations — your final project has been approved and archived!
+            🎉 Congratulations — your final project has been approved and
+            archived!
           </p>
           <p className="text-green-600 text-xs mt-1 leading-relaxed">
-            Your project is now permanently part of the digital repository. No further submissions are needed.
+            Your project is now permanently part of the digital repository. No
+            further submissions are needed.
           </p>
           <Link
             href="/student/repository"
@@ -168,7 +176,8 @@ function NextStepGuidance({
           <Info className="w-4 h-4 text-primary" />
         </div>
         <p className="text-content-primary text-sm leading-relaxed">
-          Your topic proposal has been submitted and is awaiting review. No action needed yet — check back soon.
+          Your topic proposal has been submitted and is awaiting review. No
+          action needed yet — check back soon.
         </p>
       </div>
     );
@@ -182,7 +191,8 @@ function NextStepGuidance({
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-content-primary text-sm leading-relaxed">
-            Your topic proposal needs revision. Review the feedback and resubmit.
+            Your topic proposal needs revision. Review the feedback and
+            resubmit.
           </p>
           <Link
             href="/student/feedback"
@@ -205,7 +215,8 @@ function NextStepGuidance({
           <Info className="w-4 h-4 text-primary" />
         </div>
         <p className="text-content-primary text-sm leading-relaxed">
-          Your topic was approved and is awaiting supervisor assignment. You'll be notified once one is assigned.
+          Your topic was approved and is awaiting supervisor assignment. You'll
+          be notified once one is assigned.
         </p>
       </div>
     );
@@ -219,7 +230,8 @@ function NextStepGuidance({
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-content-primary text-sm leading-relaxed">
-            Your topic was approved! You've been assigned a supervisor — go ahead and submit your first chapter.
+            Your topic was approved! You've been assigned a supervisor — go
+            ahead and submit your first chapter.
           </p>
           <Link
             href="/student/submissions"
@@ -234,9 +246,12 @@ function NextStepGuidance({
   }
 
   const latest = [...submissions].sort(
-    (a, b) => new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime()
+    (a, b) =>
+      new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime(),
   )[0];
-  const latestFeedback = feedbackList.find((f) => f.submission_id === latest.submission_id);
+  const latestFeedback = feedbackList.find(
+    (f) => f.submission_id === latest.submission_id,
+  );
 
   if (!latestFeedback) {
     return (
@@ -245,7 +260,8 @@ function NextStepGuidance({
           <Clock className="w-4 h-4 text-amber-600" />
         </div>
         <p className="text-amber-700 text-sm leading-relaxed">
-          <span className="font-semibold">{latest.chapter_label}</span> has been submitted and is awaiting your supervisor's review.
+          <span className="font-semibold">{latest.chapter_label}</span> has been
+          submitted and is awaiting your supervisor's review.
         </p>
       </div>
     );
@@ -259,7 +275,8 @@ function NextStepGuidance({
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-red-700 text-sm leading-relaxed">
-            <span className="font-semibold">{latest.chapter_label}</span> needs correction. Review your supervisor's feedback and resubmit.
+            <span className="font-semibold">{latest.chapter_label}</span> needs
+            correction. Review your supervisor's feedback and resubmit.
           </p>
           <Link
             href="/student/feedback"
@@ -317,9 +334,10 @@ export default function StudentDashboard() {
       setIsLoading(true);
       try {
         const projects = await getProjects({ student_id: user.user_id });
-        const activeProject = projects.find(
-          (p) => p.session_id === user.session_id
-        ) ?? projects[0] ?? null;
+        const activeProject =
+          projects.find((p) => p.session_id === user.session_id) ??
+          projects[0] ??
+          null;
         setProject(activeProject);
 
         if (activeProject) {
@@ -360,20 +378,20 @@ export default function StudentDashboard() {
   }
 
   const pendingFeedback = feedbackList.filter(
-    (f) => f.decision === "correction_required"
+    (f) => f.decision === "correction_required",
   ).length;
 
   const recentSubmissions = [...submissions]
     .sort(
       (a, b) =>
-        new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime()
+        new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime(),
     )
     .slice(0, 3);
 
   const recentFeedback = [...feedbackList]
     .sort(
       (a, b) =>
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
     )
     .slice(0, 2);
 
@@ -407,17 +425,11 @@ export default function StudentDashboard() {
           label="Pending Actions"
           value={pendingFeedback}
           icon={MessageSquare}
-          sub={
-            pendingFeedback === 0
-              ? "All clear"
-              : "Correction(s) required"
-          }
+          sub={pendingFeedback === 0 ? "All clear" : "Correction(s) required"}
         />
         <StatCard
           label="Similarity Score"
-          value={
-            similarityReport ? `${similarityReport.score}%` : "—"
-          }
+          value={similarityReport ? `${similarityReport.score}%` : "—"}
           icon={ShieldCheck}
           sub={
             similarityReport
@@ -473,12 +485,12 @@ export default function StudentDashboard() {
             </div>
 
             {/* Next step guidance, keyed on current status */}
-           <NextStepGuidance
-  status={project.status}
-  submissions={submissions}
-  feedbackList={feedbackList}
-  hasSupervisor={!!project.supervisor_id}
-/>
+            <NextStepGuidance
+              status={project.status}
+              submissions={submissions}
+              feedbackList={feedbackList}
+              hasSupervisor={!!project.supervisor_id}
+            />
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-10 text-center">
@@ -543,7 +555,7 @@ export default function StudentDashboard() {
                             day: "numeric",
                             month: "short",
                             year: "numeric",
-                          }
+                          },
                         )}
                       </p>
                     </div>
@@ -618,9 +630,7 @@ export default function StudentDashboard() {
           ) : (
             <div className="flex flex-col items-center justify-center py-8 text-center">
               <MessageSquare className="w-8 h-8 text-content-secondary/40 mb-2" />
-              <p className="text-content-secondary text-xs">
-                No feedback yet
-              </p>
+              <p className="text-content-secondary text-xs">No feedback yet</p>
             </div>
           )}
         </motion.div>
