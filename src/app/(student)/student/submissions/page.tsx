@@ -3,7 +3,10 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { getProjects } from "@/lib/services/projects.service";
-import { getSubmissions, createSubmission } from "@/lib/services/submissions.service";
+import {
+  getSubmissions,
+  createSubmission,
+} from "@/lib/services/submissions.service";
 import { getFeedback } from "@/lib/services/feedback.service";
 import { Project, Submission, Feedback, SubmissionType } from "@/lib/types";
 import { motion } from "framer-motion";
@@ -43,8 +46,11 @@ const CHAPTER_OPTIONS = [
   { label: "Final Submission", value: "final_submission" as SubmissionType },
 ];
 
-const ALLOWED_TYPES = ["application/pdf", "application/msword",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document"];
+const ALLOWED_TYPES = [
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+];
 const MAX_SIZE_MB = 10;
 
 function DecisionBadge({ decision }: { decision: string }) {
@@ -116,7 +122,9 @@ export default function SubmissionsPage() {
     if (!file) return;
 
     if (!ALLOWED_TYPES.includes(file.type)) {
-      setFileError("Only PDF or Word documents (.pdf, .doc, .docx) are allowed.");
+      setFileError(
+        "Only PDF or Word documents (.pdf, .doc, .docx) are allowed.",
+      );
       return;
     }
 
@@ -128,32 +136,32 @@ export default function SubmissionsPage() {
     setSelectedFile(file);
   };
 
-const handleUpload = async (e: React.FormEvent) => {
-  e.preventDefault();
-  if (!project || !selectedFile || !user) return;
+  const handleUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!project || !selectedFile || !user) return;
 
-  setIsSubmitting(true);
-  try {
-    const newSub = await createSubmission({
-      project_id: project.project_id,
-      submission_type: selectedChapter.value,
-      chapter_label: selectedChapter.label,
-      file: selectedFile,
-    });
+    setIsSubmitting(true);
+    try {
+      const newSub = await createSubmission({
+        project_id: project.project_id,
+        submission_type: selectedChapter.value,
+        chapter_label: selectedChapter.label,
+        file: selectedFile,
+      });
 
-    setSubmissions((prev) => [...prev, newSub]);
-    setSubmitSuccess(true);
-    setShowUploadForm(false);
-    setSelectedFile(null);
-    setTimeout(() => setSubmitSuccess(false), 3000);
-  } catch (err) {
-    setFileError(
-      err instanceof Error ? err.message : "Upload failed. Please try again."
-    );
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+      setSubmissions((prev) => [...prev, newSub]);
+      setSubmitSuccess(true);
+      setShowUploadForm(false);
+      setSelectedFile(null);
+      setTimeout(() => setSubmitSuccess(false), 3000);
+    } catch (err) {
+      setFileError(
+        err instanceof Error ? err.message : "Upload failed. Please try again.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -165,7 +173,7 @@ const handleUpload = async (e: React.FormEvent) => {
 
   const sortedSubmissions = [...submissions].sort(
     (a, b) =>
-      new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime()
+      new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime(),
   );
 
   return (
@@ -264,7 +272,7 @@ const handleUpload = async (e: React.FormEvent) => {
                   value={selectedChapter.label}
                   onChange={(e) => {
                     const found = CHAPTER_OPTIONS.find(
-                      (c) => c.label === e.target.value
+                      (c) => c.label === e.target.value,
                     );
                     if (found) setSelectedChapter(found);
                   }}
@@ -375,7 +383,7 @@ const handleUpload = async (e: React.FormEvent) => {
             <div className="space-y-3">
               {sortedSubmissions.map((sub) => {
                 const feedback = feedbackList.find(
-                  (f) => f.submission_id === sub.submission_id
+                  (f) => f.submission_id === sub.submission_id,
                 );
                 return (
                   <motion.div
@@ -404,7 +412,7 @@ const handleUpload = async (e: React.FormEvent) => {
                                   day: "numeric",
                                   month: "short",
                                   year: "numeric",
-                                }
+                                },
                               )}
                             </p>
                           </div>
