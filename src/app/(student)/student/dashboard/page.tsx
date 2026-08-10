@@ -150,8 +150,7 @@ function NextStepGuidance({
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-green-700 text-sm font-semibold">
-            🎉 Congratulations — your final project has been approved and
-            archived!
+            Congratulations — your final project has been approved and archived!
           </p>
           <p className="text-green-600 text-xs mt-1 leading-relaxed">
             Your project is now permanently part of the digital repository. No
