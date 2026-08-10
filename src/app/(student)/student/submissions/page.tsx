@@ -18,6 +18,7 @@ import {
   AlertCircle,
   Plus,
   X,
+  PartyPopper,
   FolderOpen,
 } from "lucide-react";
 import Link from "next/link";
@@ -196,7 +197,7 @@ export default function SubmissionsPage() {
             Upload and track your chapter drafts
           </p>
         </div>
-        {project && (
+        {project && project.status !== "archived" && (
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
@@ -210,26 +211,20 @@ export default function SubmissionsPage() {
       </motion.div>
 
       {/* No project state */}
-      {!project && (
+      {project && project.status === "archived" && (
         <motion.div
           variants={cardVariants}
-          className="bg-background-surface rounded-2xl border border-dashed border-border p-10 flex flex-col items-center justify-center text-center"
+          className="bg-green-50 border border-green-200 rounded-2xl p-6 flex flex-col items-center text-center"
         >
-          <div className="w-12 h-12 bg-primary/8 rounded-2xl flex items-center justify-center mb-3">
-            <FolderOpen className="w-6 h-6 text-primary" />
+          <div className="w-12 h-12 bg-green-100 rounded-2xl flex items-center justify-center mb-3">
+            <PartyPopper className="w-6 h-6 text-green-600" />
           </div>
-          <p className="text-content-primary font-semibold text-sm mb-1">
-            No active project
+          <p className="text-green-700 font-semibold text-sm">
+            This project is complete and archived
           </p>
-          <p className="text-content-secondary text-xs mb-4">
-            You need an active project before you can upload submissions
+          <p className="text-green-600 text-xs mt-1">
+            No further submissions are needed. Great work!
           </p>
-          <Link
-            href="/student/topics/new"
-            className="bg-primary text-white text-xs font-semibold px-4 py-2 rounded-xl hover:bg-primary-light transition"
-          >
-            Submit Topic First
-          </Link>
         </motion.div>
       )}
 

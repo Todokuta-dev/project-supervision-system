@@ -289,7 +289,7 @@ export default function LoginPage() {
             </form>
 
             {/* Dev credentials */}
-            <motion.div
+            {/* <motion.div
               variants={fadeUp}
               className="mt-6 p-4 bg-background rounded-xl border border-border"
             >
@@ -317,7 +317,7 @@ export default function LoginPage() {
                 </p>
                 <p className="mt-1 italic">Any password works for now.</p>
               </div>
-            </motion.div>
+            </motion.div> */}
             {/* Sign up link */}
             <motion.p
               variants={fadeUp}
