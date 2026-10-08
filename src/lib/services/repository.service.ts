@@ -48,12 +48,14 @@ export async function getRepositoryItemById(
 }
 
 // There is no manual "archive" action on the backend — archiving happens
-// automatically, atomically, when a project's "final" stage approval is
-// approved (handled inside ApprovalController). This function just confirms
+// automatically, atomically, after a final approval or approval of final
+// submission feedback. This function just confirms
 // and returns the item that was already created by that process, matched
-// by student_id + title, since the caller won't have a repo_id yet.
+// by project id so matching project titles cannot select the wrong record.
 export async function archiveToRepository(
-  data: Omit<RepositoryItem, "repo_id" | "archived_at">
+  data: Omit<RepositoryItem, "repo_id" | "archived_at" | "project_id"> & {
+    project_id: string;
+  }
 ): Promise<RepositoryItem> {
   const results = await searchRepository({
     department_id: data.department_id,
@@ -61,12 +63,12 @@ export async function archiveToRepository(
   });
 
   const match = results.find(
-    (r) => r.student_id === data.student_id && r.title === data.title
+    (r) => r.project_id === data.project_id
   );
 
   if (!match) {
     throw new Error(
-      "No repository item was found. Archiving happens automatically when a project's final approval is granted — make sure that step has completed first."
+      "No repository item was found. Archiving happens automatically after final approval. Make sure that step has completed first."
     );
   }
 

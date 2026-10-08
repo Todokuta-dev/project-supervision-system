@@ -117,7 +117,6 @@ export const mockAuthUsers: AuthUser[] = [
     role: "student",
     department_id: "dept_001",
     session_id: "session_002",
-    token: "mock_token_student_001",
   },
   {
     user_id: "user_003",
@@ -126,7 +125,6 @@ export const mockAuthUsers: AuthUser[] = [
     role: "supervisor",
     department_id: "dept_001",
     session_id: "session_002",
-    token: "mock_token_supervisor_003",
   },
   {
     user_id: "user_005",
@@ -135,7 +133,6 @@ export const mockAuthUsers: AuthUser[] = [
     role: "admin",
     department_id: "dept_001",
     session_id: "session_002",
-    token: "mock_token_admin_005",
   },
 ];
 

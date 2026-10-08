@@ -1,7 +1,7 @@
 // ============================================
 // AUTH CONTEXT
 // Manages logged-in user state across the app
-// Mock now → real Sanctum token auth later
+// Restores and manages the current Sanctum session.
 // ============================================
 
 "use client";
@@ -29,16 +29,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // On mount, check if a token exists in localStorage
-  // and restore the session
+  // Restore the server-side session from its HttpOnly cookie.
   useEffect(() => {
     const restoreSession = async () => {
       try {
-        const token = localStorage.getItem("auth_token");
-        if (token) {
-          const me = await getMe(token);
-          setUser(me);
-        }
+        setUser(await getMe());
       } catch {
         setUser(null);
       } finally {
@@ -53,7 +48,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     try {
       const authUser = await loginService(email, password);
-      localStorage.setItem("auth_token", authUser.token);
       setUser(authUser);
     } finally {
       setIsLoading(false);
@@ -64,9 +58,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     try {
       await logoutService();
-      localStorage.removeItem("auth_token");
-      setUser(null);
     } finally {
+      setUser(null);
       setIsLoading(false);
     }
   };

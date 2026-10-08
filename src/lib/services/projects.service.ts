@@ -57,16 +57,6 @@ export async function createProject(
   });
 }
 
-export async function updateProjectStatus(
-  project_id: string,
-  status: ProjectStatus
-): Promise<Project> {
-  return apiFetch<Project>(`/projects/${project_id}`, {
-    method: "PUT",
-    body: { status },
-  });
-}
-
 export async function assignSupervisor(
   project_id: string,
   supervisor_id: string

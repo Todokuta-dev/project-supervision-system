@@ -46,11 +46,8 @@ export async function getSimilarityReportById(
   }
 }
 
-// There is no manual "generate" action on the backend — a placeholder report
-// (score: 0, no matched sources) is created automatically the instant a
-// submission is made. This function just fetches that existing report.
-// A real similarity engine can replace the auto-creation logic on the
-// backend later without needing any change here.
+// The backend computes and stores this report when it creates a submission.
+// This function retrieves the existing report.
 export async function generateSimilarityReport(
   submission_id: string
 ): Promise<SimilarityReport> {

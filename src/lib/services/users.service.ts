@@ -1,7 +1,6 @@
 // ============================================
 // USERS SERVICE
-// Admin-only user directory (for assigning
-// supervisors, displaying names, etc.)
+// Profile directory scoped by the API to the caller's projects.
 // ============================================
 
 import { apiFetch } from "@/lib/api-client";

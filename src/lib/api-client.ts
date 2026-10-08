@@ -20,14 +20,13 @@ export class ApiError extends Error {
 
 interface ApiFetchOptions extends Omit<RequestInit, "body"> {
   body?: unknown;
-  skipAuth?: boolean;
 }
 
 export async function apiFetch<T>(
   endpoint: string,
   options: ApiFetchOptions = {}
 ): Promise<T> {
-  const { body, skipAuth, headers, ...rest } = options;
+  const { body, headers, ...rest } = options;
 
   const isFormData = body instanceof FormData;
 
@@ -37,15 +36,20 @@ export async function apiFetch<T>(
     ...(headers as Record<string, string>),
   };
 
-  if (!skipAuth) {
-    const token = localStorage.getItem("auth_token");
-    if (token) {
-      finalHeaders["Authorization"] = `Bearer ${token}`;
+  if (typeof document !== "undefined" && rest.method && rest.method !== "GET") {
+    const xsrfCookie = document.cookie
+      .split(";")
+      .map((cookie) => cookie.trim())
+      .find((cookie) => cookie.startsWith("XSRF-TOKEN="));
+
+    if (xsrfCookie) {
+      finalHeaders["X-XSRF-TOKEN"] = decodeURIComponent(xsrfCookie.slice("XSRF-TOKEN=".length));
     }
   }
 
   const res = await fetch(`${API_URL}${endpoint}`, {
     ...rest,
+    credentials: "include",
     headers: finalHeaders,
     body: isFormData ? body : body ? JSON.stringify(body) : undefined,
   });

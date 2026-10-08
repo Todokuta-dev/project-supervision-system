@@ -75,7 +75,7 @@ export interface Submission {
 export interface Feedback {
   feedback_id: string;
   submission_id: string;
-  supervisor_id: string;
+  supervisor_id: string | null;
   comments: string;
   decision: "approve" | "correction_required";
   created_at: string;
@@ -83,13 +83,14 @@ export interface Feedback {
 
 export interface RepositoryItem {
   repo_id: string;
+  project_id?: string;
   title: string;
   abstract: string;
   keywords: string[];
   department_id: string;
   session_id: string;
   student_id: string;
-  supervisor_id: string;
+  supervisor_id: string | null;
   file_path: string;
   archived_at: string;
 }
@@ -142,5 +143,4 @@ export interface AuthUser {
   role: UserRole;
   department_id: string;
   session_id: string;
-  token: string;
 }
