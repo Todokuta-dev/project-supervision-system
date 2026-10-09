@@ -170,7 +170,7 @@ export default function AdminApprovalsPage() {
       )}
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
         <motion.div
           variants={cardVariants}
           className="bg-amber-50 rounded-2xl border border-amber-200 p-4 text-center cursor-pointer hover:border-amber-300 transition"
@@ -350,13 +350,13 @@ export default function AdminApprovalsPage() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4"
+          className="fixed inset-0 bg-black/40 z-50 flex items-start sm:items-center justify-center overflow-y-auto p-4"
         >
           <motion.div
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.2 }}
-            className="bg-background-surface rounded-2xl border border-border p-6 w-full max-w-md shadow-2xl"
+            className="my-auto bg-background-surface rounded-2xl border border-border p-5 sm:p-6 w-full max-w-md shadow-2xl"
           >
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-content-primary font-bold text-base">

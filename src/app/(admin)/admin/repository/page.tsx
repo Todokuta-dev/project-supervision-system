@@ -125,7 +125,7 @@ export default function AdminRepositoryPage() {
       </motion.div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
         <motion.div
           variants={cardVariants}
           className="bg-primary rounded-2xl border border-primary p-4 text-center"

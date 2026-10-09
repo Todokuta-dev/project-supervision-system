@@ -227,7 +227,7 @@ export default function AdminDepartmentsPage() {
       >
         {departments.length > 0 ? (
           <div className="divide-y divide-border">
-            <div className="grid grid-cols-12 gap-4 px-6 py-3 bg-background">
+            <div className="hidden sm:grid grid-cols-12 gap-4 px-6 py-3 bg-background">
               <p className="col-span-1 text-content-secondary text-xs font-semibold uppercase tracking-wider">
                 #
               </p>
@@ -245,20 +245,23 @@ export default function AdminDepartmentsPage() {
             {departments.map((dept, index) => (
               <div
                 key={dept.department_id}
-                className="grid grid-cols-12 gap-4 px-6 py-4 hover:bg-background transition items-center"
+                className="grid grid-cols-1 sm:grid-cols-12 gap-3 sm:gap-4 px-4 sm:px-6 py-4 hover:bg-background transition items-center"
               >
-                <p className="col-span-1 text-content-secondary text-sm">
+                <p className="hidden sm:block sm:col-span-1 text-content-secondary text-sm">
                   {index + 1}
                 </p>
-                <div className="col-span-2">
+                <div className="sm:col-span-2 flex items-center gap-2">
+                  <span className="sm:hidden text-xs text-content-secondary/70">Code</span>
                   <span className="bg-primary/10 text-primary text-xs font-bold px-2.5 py-1 rounded-lg border border-primary/20">
                     {dept.code}
                   </span>
                 </div>
-                <p className="col-span-7 text-content-primary text-sm font-medium">
+                <p className="sm:col-span-7 text-content-primary text-sm font-medium">
+                  <span className="sm:hidden text-xs text-content-secondary/70 mr-2">Name</span>
                   {dept.name}
                 </p>
-                <div className="col-span-2 flex items-center gap-2">
+                <div className="sm:col-span-2 flex items-center justify-between sm:justify-start gap-2">
+                  <span className="sm:hidden text-xs text-content-secondary/70">Actions</span>
                   <button
                     onClick={() => handleOpenEdit(dept)}
                     className="w-8 h-8 rounded-lg bg-background border border-border flex items-center justify-center text-content-secondary hover:text-primary hover:border-primary/30 transition"
@@ -301,13 +304,13 @@ export default function AdminDepartmentsPage() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4"
+          className="fixed inset-0 bg-black/40 z-50 flex items-start sm:items-center justify-center overflow-y-auto p-4"
         >
           <motion.div
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.2 }}
-            className="bg-background-surface rounded-2xl border border-border p-6 w-full max-w-md shadow-2xl"
+            className="my-auto bg-background-surface rounded-2xl border border-border p-5 sm:p-6 w-full max-w-md shadow-2xl"
           >
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-content-primary font-bold text-base">

@@ -232,7 +232,7 @@ export default function ReviewSubmissionPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="flex items-center gap-2">
             <User className="w-4 h-4 text-content-secondary" />
             <div>
@@ -428,7 +428,7 @@ export default function ReviewSubmissionPage() {
       {/* Feedback form */}
       <motion.div
         variants={cardVariants}
-        className="bg-background-surface rounded-2xl border border-border p-6"
+        className="bg-background-surface rounded-2xl border border-border p-4 sm:p-6"
       >
         <h2 className="text-content-primary font-bold text-base mb-5">
           {existingFeedback ? "Feedback Given" : "Give Feedback"}
@@ -440,7 +440,7 @@ export default function ReviewSubmissionPage() {
             <label className="block text-sm font-medium text-content-primary mb-2">
               Decision
             </label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <button
                 type="button"
                 onClick={() => setDecision("approve")}

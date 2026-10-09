@@ -236,9 +236,9 @@ export default function ProjectDetailPage() {
       {/* Project Header */}
       <motion.div
         variants={cardVariants}
-        className="bg-background-surface rounded-2xl border border-border p-6"
+        className="bg-background-surface rounded-2xl border border-border p-4 sm:p-6"
       >
-        <div className="flex items-start justify-between gap-4 mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
           <div className="flex-1 min-w-0">
             <h1 className="text-content-primary text-xl font-bold leading-snug">
               {project.title}
@@ -399,7 +399,7 @@ export default function ProjectDetailPage() {
 
       {/* Tabs */}
       <motion.div variants={cardVariants}>
-        <div className="flex items-center gap-1 bg-background-surface border border-border rounded-2xl p-1">
+        <div className="flex items-center gap-1 bg-background-surface border border-border rounded-2xl p-1 overflow-x-auto">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.key;
@@ -409,7 +409,7 @@ export default function ProjectDetailPage() {
                 onClick={() =>
                   setActiveTab(tab.key as "overview" | "submissions" | "feedback")
                 }
-                className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                className={`flex-none sm:flex-1 flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm font-medium whitespace-nowrap transition-all ${
                   isActive
                     ? "bg-primary text-white shadow-sm"
                     : "text-content-secondary hover:text-content-primary"
@@ -426,14 +426,14 @@ export default function ProjectDetailPage() {
       {/* Tab Content */}
       <motion.div
         variants={cardVariants}
-        className="bg-background-surface rounded-2xl border border-border p-6"
+        className="bg-background-surface rounded-2xl border border-border p-4 sm:p-6"
       >
         {activeTab === "overview" && (
           <div className="space-y-4">
             <h2 className="text-content-primary font-bold text-base">
               Project Overview
             </h2>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="p-4 rounded-xl bg-background border border-border">
                 <p className="text-content-secondary text-xs mb-1">
                   Date Created

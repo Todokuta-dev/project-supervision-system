@@ -135,7 +135,7 @@ export default function AdminUsersPage() {
       </motion.div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
         <motion.div
           variants={cardVariants}
           className="bg-primary rounded-2xl border border-primary p-4 text-center cursor-pointer hover:bg-primary-light transition"
@@ -179,7 +179,7 @@ export default function AdminUsersPage() {
             className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border text-content-primary bg-background-surface placeholder:text-content-secondary text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition"
           />
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {["all", "student", "supervisor", "admin"].map((r) => (
             <button
               key={r}
@@ -233,9 +233,9 @@ export default function AdminUsersPage() {
               return (
                 <div
                   key={user.user_id}
-                  className="grid grid-cols-1 sm:grid-cols-12 gap-4 px-6 py-4 hover:bg-background transition"
+                  className="grid grid-cols-1 sm:grid-cols-12 gap-4 px-4 sm:px-6 py-4 hover:bg-background transition"
                 >
-                  <div className="col-span-4 flex items-center gap-3">
+                  <div className="sm:col-span-4 flex items-center gap-3">
                     <div className="w-9 h-9 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
                       <span className="text-primary text-sm font-bold">
                         {user.full_name.charAt(0).toUpperCase()}
@@ -252,23 +252,23 @@ export default function AdminUsersPage() {
                     </div>
                   </div>
 
-                  <div className="col-span-2 flex items-center">
+                  <div className="sm:col-span-2 flex items-center">
                     <RoleBadge role={user.role} />
                   </div>
 
-                  <div className="col-span-3 flex items-center gap-1.5 text-content-secondary text-xs">
+                  <div className="sm:col-span-3 flex items-center gap-1.5 text-content-secondary text-xs">
                     <Building2 className="w-3.5 h-3.5 flex-shrink-0" />
                     <span className="truncate">
                       {department?.name ?? "—"}
                     </span>
                   </div>
 
-                  <div className="col-span-2 flex items-center gap-1.5 text-content-secondary text-xs">
+                  <div className="sm:col-span-2 flex items-center gap-1.5 text-content-secondary text-xs">
                     <CalendarDays className="w-3.5 h-3.5 flex-shrink-0" />
                     <span>{session?.label ?? "—"}</span>
                   </div>
 
-                  <div className="col-span-1 flex items-center">
+                  <div className="sm:col-span-1 flex items-center">
                     <button
                       onClick={() =>
                         setSelectedUser(
@@ -284,7 +284,7 @@ export default function AdminUsersPage() {
                   </div>
 
                   {selectedUser?.user_id === user.user_id && (
-                    <div className="col-span-12 mt-2 p-4 bg-background rounded-xl border border-border space-y-3">
+                    <div className="sm:col-span-12 mt-2 p-4 bg-background rounded-xl border border-border space-y-3">
                       <p className="text-content-secondary text-xs font-semibold uppercase tracking-wider">
                         User Details
                       </p>

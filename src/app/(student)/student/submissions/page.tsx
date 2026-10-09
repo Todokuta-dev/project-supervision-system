@@ -167,7 +167,7 @@ export default function SubmissionsPage() {
       {/* Header */}
       <motion.div
         variants={cardVariants}
-        className="flex items-center justify-between"
+        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
       >
         <div>
           <h1 className="text-content-primary text-2xl font-bold">
@@ -213,13 +213,13 @@ export default function SubmissionsPage() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4"
+          className="fixed inset-0 bg-black/40 z-50 flex items-start sm:items-center justify-center overflow-y-auto p-4"
         >
           <motion.div
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.2 }}
-            className="bg-background-surface rounded-2xl border border-border p-6 w-full max-w-md shadow-2xl"
+            className="my-auto bg-background-surface rounded-2xl border border-border p-5 sm:p-6 w-full max-w-md shadow-2xl"
           >
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-content-primary font-bold text-base">
@@ -344,7 +344,7 @@ export default function SubmissionsPage() {
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="fixed top-6 right-6 z-50 bg-green-50 border border-green-200 text-green-700 text-sm font-medium px-4 py-3 rounded-xl shadow-lg flex items-center gap-2"
+          className="fixed top-4 left-4 right-4 sm:top-6 sm:left-auto sm:right-6 sm:w-auto z-50 bg-green-50 border border-green-200 text-green-700 text-sm font-medium px-4 py-3 rounded-xl shadow-lg flex items-center gap-2"
         >
           <CheckCircle2 className="w-4 h-4" />
           Chapter uploaded successfully

@@ -144,7 +144,7 @@ useEffect(() => {
       </motion.div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
         <motion.div
           variants={cardVariants}
           className="bg-primary rounded-2xl border border-primary p-4 text-center"
@@ -180,7 +180,7 @@ useEffect(() => {
         <p className="text-content-secondary text-xs font-semibold uppercase tracking-wider mb-3">
           Actions by Role
         </p>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {[
             {
               label: "Students",

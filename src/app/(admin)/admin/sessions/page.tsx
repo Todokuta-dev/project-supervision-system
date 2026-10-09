@@ -288,7 +288,7 @@ export default function AdminSessionsPage() {
       >
         {sessions.length > 0 ? (
           <div className="divide-y divide-border">
-            <div className="grid grid-cols-12 gap-4 px-6 py-3 bg-background">
+            <div className="hidden sm:grid grid-cols-12 gap-4 px-6 py-3 bg-background">
               <p className="col-span-3 text-content-secondary text-xs font-semibold uppercase tracking-wider">
                 Session
               </p>
@@ -309,30 +309,33 @@ export default function AdminSessionsPage() {
             {sessions.map((session) => (
               <div
                 key={session.session_id}
-                className={`grid grid-cols-12 gap-4 px-6 py-4 items-center transition ${
+                className={`grid grid-cols-1 sm:grid-cols-12 gap-3 sm:gap-4 px-4 sm:px-6 py-4 items-center transition ${
                   session.is_active ? "bg-primary/5" : "hover:bg-background"
                 }`}
               >
-                <div className="col-span-3">
+                <div className="sm:col-span-3">
                   <p className="text-content-primary text-sm font-semibold">
                     {session.label}
                   </p>
                 </div>
-                <p className="col-span-3 text-content-secondary text-sm">
+                <p className="sm:col-span-3 text-content-secondary text-sm">
+                  <span className="sm:hidden text-xs text-content-secondary/70 mr-2">Start date</span>
                   {new Date(session.start_date).toLocaleDateString("en-GB", {
                     day: "numeric",
                     month: "short",
                     year: "numeric",
                   })}
                 </p>
-                <p className="col-span-3 text-content-secondary text-sm">
+                <p className="sm:col-span-3 text-content-secondary text-sm">
+                  <span className="sm:hidden text-xs text-content-secondary/70 mr-2">End date</span>
                   {new Date(session.end_date).toLocaleDateString("en-GB", {
                     day: "numeric",
                     month: "short",
                     year: "numeric",
                   })}
                 </p>
-                <div className="col-span-1">
+                <div className="sm:col-span-1 flex items-center gap-2">
+                  <span className="sm:hidden text-xs text-content-secondary/70">Status</span>
                   {session.is_active ? (
                     <span className="bg-green-50 text-green-700 text-xs font-semibold px-2 py-0.5 rounded-full border border-green-200">
                       Active
@@ -343,7 +346,7 @@ export default function AdminSessionsPage() {
                     </span>
                   )}
                 </div>
-                <div className="col-span-2 flex items-center gap-2">
+                <div className="sm:col-span-2 flex items-center justify-between sm:justify-start gap-2">
                   {!session.is_active && (
                     <button
                       onClick={() => handleSetActive(session.session_id)}
@@ -394,13 +397,13 @@ export default function AdminSessionsPage() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4"
+          className="fixed inset-0 bg-black/40 z-50 flex items-start sm:items-center justify-center overflow-y-auto p-4"
         >
           <motion.div
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.2 }}
-            className="bg-background-surface rounded-2xl border border-border p-6 w-full max-w-md shadow-2xl"
+            className="my-auto bg-background-surface rounded-2xl border border-border p-5 sm:p-6 w-full max-w-md shadow-2xl"
           >
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-content-primary font-bold text-base">
@@ -431,7 +434,7 @@ export default function AdminSessionsPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-content-primary mb-1">
                     Start Date

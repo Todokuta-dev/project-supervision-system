@@ -193,7 +193,7 @@ export default function StudentLayout({
       <div className="flex-1 flex flex-col min-w-0 lg:ml-0">
 
         {/* Top Header */}
-        <header className="bg-background-surface border-b border-border px-6 py-4 flex items-center justify-between sticky top-0 z-10">
+        <header className="bg-background-surface border-b border-border px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-3 sticky top-0 z-10">
           <div className="flex items-center gap-3">
             {/* Mobile menu button */}
             <button
@@ -219,7 +219,7 @@ export default function StudentLayout({
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 p-6 overflow-y-auto">
+        <main className="flex-1 p-4 sm:p-6 overflow-y-auto min-w-0">
           <motion.div
             key={pathname}
             initial={{ opacity: 0, y: 12 }}
