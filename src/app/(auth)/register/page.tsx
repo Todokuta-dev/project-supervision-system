@@ -72,7 +72,7 @@ function FloatingCard({
         ease: "easeInOut",
         delay,
       }}
-      className={`absolute bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl px-3 py-2 flex items-center gap-2 ${className}`}
+      className={`absolute bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl px-3 py-2 items-center gap-2 ${className}`}
     >
       <Icon className="w-4 h-4 text-accent" />
       <span className="text-white/90 text-xs font-medium">{label}</span>
@@ -170,14 +170,14 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-4 py-10">
-      <div className="w-full max-w-5xl rounded-3xl shadow-2xl overflow-hidden flex flex-col lg:flex-row">
+    <div className="min-h-[100svh] bg-background flex items-center justify-center sm:px-4 sm:py-8">
+      <div className="w-full min-h-[100svh] sm:min-h-0 max-w-5xl sm:rounded-3xl shadow-none sm:shadow-2xl overflow-hidden flex flex-col lg:flex-row">
         {/* --- LEFT PANEL --- */}
         <motion.div
           variants={leftVariants}
           initial="hidden"
           animate="visible"
-          className="bg-primary relative flex flex-col justify-between p-10 lg:w-1/2 min-h-[320px] lg:min-h-[680px] overflow-hidden"
+          className="bg-primary relative flex flex-col justify-between p-6 sm:p-10 lg:w-1/2 min-h-[260px] sm:min-h-[320px] lg:min-h-[680px] overflow-hidden"
         >
           {/* Background decorations */}
           <div className="absolute -top-16 -left-16 w-64 h-64 bg-white/5 rounded-full" />
@@ -188,25 +188,25 @@ export default function RegisterPage() {
           <FloatingCard
             icon={BookOpen}
             label="Track Progress"
-            className="top-24 right-6"
+            className="hidden xl:flex top-24 right-6"
             delay={0}
           />
           <FloatingCard
             icon={FileText}
             label="Digital Repository"
-            className="top-52 right-10"
+            className="hidden xl:flex top-52 right-10"
             delay={0.5}
           />
           <FloatingCard
             icon={Users}
             label="Get Supervised"
-            className="bottom-28 left-6"
+            className="hidden xl:flex bottom-28 left-6"
             delay={1}
           />
 
           {/* Top */}
           <div className="relative z-10">
-            <div className="flex items-center gap-2 mb-8">
+            <div className="flex items-center gap-2 mb-5 sm:mb-8">
               <div className="w-9 h-9 bg-accent rounded-lg flex items-center justify-center">
                 <GraduationCap className="w-5 h-5 text-primary" />
               </div>
@@ -215,7 +215,7 @@ export default function RegisterPage() {
               </span>
             </div>
 
-            <h1 className="text-white text-4xl lg:text-5xl font-bold leading-tight">
+            <h1 className="text-white text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight">
               Join the
               <br />
               <span className="text-accent">Platform.</span>
@@ -242,7 +242,7 @@ export default function RegisterPage() {
           variants={rightVariants}
           initial="hidden"
           animate="visible"
-          className="bg-background-surface flex flex-col justify-center px-8 py-10 lg:px-12 lg:w-1/2"
+          className="bg-background-surface flex flex-col justify-center px-5 py-8 sm:px-8 sm:py-10 lg:px-12 lg:w-1/2"
         >
           <motion.div
             variants={staggerContainer}
@@ -277,7 +277,7 @@ export default function RegisterPage() {
                   value={formData.full_name}
                   onChange={handleChange}
                   placeholder="e.g. Chukwuemeka Obi"
-                  className="w-full px-4 py-2.5 rounded-xl border border-border text-content-primary bg-background placeholder:text-content-secondary text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition"
+                  className="w-full min-h-11 px-4 py-3 rounded-xl border border-border text-content-primary bg-background placeholder:text-content-secondary text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition"
                 />
               </motion.div>
 
@@ -297,12 +297,12 @@ export default function RegisterPage() {
                   value={formData.email}
                   onChange={handleChange}
                   placeholder="you@aaua.edu.ng"
-                  className="w-full px-4 py-2.5 rounded-xl border border-border text-content-primary bg-background placeholder:text-content-secondary text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition"
+                  className="w-full min-h-11 px-4 py-3 rounded-xl border border-border text-content-primary bg-background placeholder:text-content-secondary text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition"
                 />
               </motion.div>
 
               {/* Role + Department — side by side */}
-              <motion.div variants={fadeUp} className="grid grid-cols-2 gap-3">
+              <motion.div variants={fadeUp} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {/* Role */}
                 <div>
                   <label
@@ -316,7 +316,7 @@ export default function RegisterPage() {
                     name="role"
                     value={formData.role}
                     onChange={handleChange}
-                    className="w-full px-4 py-2.5 rounded-xl border border-border text-content-primary bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition"
+                    className="w-full min-h-11 px-4 py-3 rounded-xl border border-border text-content-primary bg-background text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition"
                   >
                     <option value="student">Student</option>
                     <option value="supervisor">Supervisor</option>
@@ -336,7 +336,7 @@ export default function RegisterPage() {
                     name="department_id"
                     value={formData.department_id}
                     onChange={handleChange}
-                    className="w-full px-4 py-2.5 rounded-xl border border-border text-content-primary bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition"
+                    className="w-full min-h-11 px-4 py-3 rounded-xl border border-border text-content-primary bg-background text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition"
                   >
                     <option value="">Select</option>
                     {departments.map((dept) => (
@@ -368,12 +368,12 @@ export default function RegisterPage() {
                     value={formData.password}
                     onChange={handleChange}
                     placeholder="Min. 8 characters"
-                    className="w-full px-4 py-2.5 pr-11 rounded-xl border border-border text-content-primary bg-background placeholder:text-content-secondary text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition"
+                    className="w-full min-h-11 px-4 py-3 pr-12 rounded-xl border border-border text-content-primary bg-background placeholder:text-content-secondary text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-content-secondary hover:text-content-primary transition"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 min-h-10 min-w-10 inline-flex items-center justify-center rounded-lg text-content-secondary hover:text-content-primary transition"
                   >
                     {showPassword ? (
                       <EyeOff className="w-4 h-4" />
@@ -401,12 +401,12 @@ export default function RegisterPage() {
                     value={formData.confirm_password}
                     onChange={handleChange}
                     placeholder="Re-enter password"
-                    className="w-full px-4 py-2.5 pr-11 rounded-xl border border-border text-content-primary bg-background placeholder:text-content-secondary text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition"
+                    className="w-full min-h-11 px-4 py-3 pr-12 rounded-xl border border-border text-content-primary bg-background placeholder:text-content-secondary text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition"
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirm(!showConfirm)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-content-secondary hover:text-content-primary transition"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 min-h-10 min-w-10 inline-flex items-center justify-center rounded-lg text-content-secondary hover:text-content-primary transition"
                   >
                     {showConfirm ? (
                       <EyeOff className="w-4 h-4" />
@@ -435,7 +435,7 @@ export default function RegisterPage() {
                   disabled={isSubmitting || isLoadingReference}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className="w-full bg-primary hover:bg-primary-light text-content-inverse font-semibold py-2.5 rounded-xl transition disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-2"
+                  className="w-full min-h-11 bg-primary hover:bg-primary-light text-content-inverse font-semibold py-3 rounded-xl transition disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-2"
                 >
                   {isSubmitting ? (
                     <>
