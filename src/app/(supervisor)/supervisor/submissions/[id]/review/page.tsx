@@ -10,6 +10,7 @@ import { getSimilarityReport } from "@/lib/services/similarity.service";
 import { Submission, Project, Feedback, SimilarityReport } from "@/lib/types";
 import { getUsers } from "@/lib/services/users.service";
 import { User as UserType } from "@/lib/types";
+import SimilarityStatusNotice from "@/components/ui/SimilarityStatusNotice";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -149,14 +150,28 @@ export default function ReviewSubmissionPage() {
           transition={{ duration: 0.4, ease: "easeOut" }}
           className="space-y-4"
         >
-          <div className="w-16 h-16 bg-green-50 border border-green-200 rounded-full flex items-center justify-center mx-auto">
-            <CheckCircle2 className="w-8 h-8 text-green-500" />
+          <div
+            className={`w-16 h-16 rounded-full border flex items-center justify-center mx-auto ${
+              decision === "approve"
+                ? "bg-green-50 border-green-200"
+                : "bg-amber-50 border-amber-200"
+            }`}
+          >
+            {decision === "approve" ? (
+              <CheckCircle2 className="w-8 h-8 text-green-600" />
+            ) : (
+              <AlertCircle className="w-8 h-8 text-amber-600" />
+            )}
           </div>
-          <h2 className="text-content-primary text-xl font-bold">
-            Feedback Submitted
+          <h2
+            className={`text-xl font-bold ${
+              decision === "approve" ? "text-green-700" : "text-amber-700"
+            }`}
+          >
+            {decision === "approve" ? "Chapter approved" : "Revisions requested"}
           </h2>
           <p className="text-content-secondary text-sm max-w-xs">
-            Your feedback has been sent to the student successfully.
+            Your decision and feedback have been sent to the student successfully.
           </p>
           <p className="text-content-secondary text-xs">
             Redirecting to review queue...
@@ -305,6 +320,7 @@ export default function ReviewSubmissionPage() {
                 : "bg-red-50 border-red-200"
           }`}
         >
+          <SimilarityStatusNotice status={similarityReport.analysis_status} />
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div
@@ -336,7 +352,7 @@ export default function ReviewSubmissionPage() {
                         : "text-red-700"
                   }`}
                 >
-                  Similarity Score: {similarityReport.score}%
+                  Similarity Score: {similarityReport.analysis_status && similarityReport.analysis_status !== "complete" ? "Unavailable" : `${similarityReport.score}%`}
                 </p>
                 <p
                   className={`text-xs ${
@@ -347,11 +363,13 @@ export default function ReviewSubmissionPage() {
                         : "text-red-600"
                   }`}
                 >
-                  {similarityReport.score <= 20
-                    ? "Within acceptable range"
+                  {similarityReport.analysis_status && similarityReport.analysis_status !== "complete"
+                    ? "No reliable similarity analysis is available"
+                    : similarityReport.score <= 20
+                    ? "Low similarity signal — review as needed"
                     : similarityReport.score <= 40
-                      ? "Moderate similarity — review matched sources"
-                      : "High similarity — significant revision required"}
+                    ? "Moderate similarity signal — review matched sources"
+                    : "High similarity signal — review matched sources"}
                 </p>
               </div>
             </div>
@@ -380,7 +398,7 @@ export default function ReviewSubmissionPage() {
                     {source.source_title}
                   </p>
                   <span className="text-xs font-bold text-content-secondary">
-                    {source.matched_percentage}% match
+                    {source.matched_percentage}% similarity
                   </span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">

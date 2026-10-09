@@ -37,7 +37,22 @@ interface EnrichedReport {
   project: Project;
 }
 
-function ScoreBadge({ score }: { score: number }) {
+function ScoreBadge({
+  score,
+  status,
+}: {
+  score: number;
+  status?: SimilarityReport["analysis_status"];
+}) {
+  if (status && status !== "complete") {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full border bg-amber-50 text-amber-700 border-amber-200">
+        <AlertTriangle className="w-3 h-3" />
+        Analysis unavailable
+      </span>
+    );
+  }
+
   const isLow = score <= 20;
   const isMid = score > 20 && score <= 40;
   return (
@@ -62,7 +77,7 @@ export default function SimilarityReportsPage() {
   const [enrichedReports, setEnrichedReports] = useState<EnrichedReport[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [filter, setFilter] = useState<"all" | "low" | "medium" | "high">("all");
+  const [filter, setFilter] = useState<"all" | "low" | "medium" | "high" | "incomplete">("all");
 
   useEffect(() => {
     if (!user) return;
@@ -102,17 +117,24 @@ export default function SimilarityReportsPage() {
   }
 
   const filtered = enrichedReports.filter(({ report }) => {
+    const unavailable = report.analysis_status && report.analysis_status !== "complete";
+    if (filter === "incomplete") return Boolean(unavailable);
+    if (unavailable) return false;
     if (filter === "low") return report.score <= 20;
     if (filter === "medium") return report.score > 20 && report.score <= 40;
     if (filter === "high") return report.score > 40;
     return true;
   });
 
-  const lowCount = enrichedReports.filter((r) => r.report.score <= 20).length;
+  const comparableReports = enrichedReports.filter(
+    (r) => !r.report.analysis_status || r.report.analysis_status === "complete"
+  );
+  const lowCount = comparableReports.filter((r) => r.report.score <= 20).length;
   const midCount = enrichedReports.filter(
-    (r) => r.report.score > 20 && r.report.score <= 40
+    (r) => (!r.report.analysis_status || r.report.analysis_status === "complete") && r.report.score > 20 && r.report.score <= 40
   ).length;
-  const highCount = enrichedReports.filter((r) => r.report.score > 40).length;
+  const highCount = comparableReports.filter((r) => r.report.score > 40).length;
+  const incompleteCount = enrichedReports.length - comparableReports.length;
 
   return (
     <motion.div
@@ -127,12 +149,12 @@ export default function SimilarityReportsPage() {
           Similarity Reports
         </h1>
         <p className="text-content-secondary text-sm mt-1">
-          Plagiarism and similarity analytics for all student submissions
+          Similarity signals and matched passages for student submissions
         </p>
       </motion.div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <motion.div
           variants={cardVariants}
           className="bg-green-50 rounded-2xl border border-green-200 p-4 text-center cursor-pointer hover:border-green-300 transition"
@@ -157,6 +179,14 @@ export default function SimilarityReportsPage() {
           <p className="text-2xl font-bold text-red-600">{highCount}</p>
           <p className="text-red-600 text-xs mt-1">High (&gt;40%)</p>
         </motion.div>
+        <motion.div
+          variants={cardVariants}
+          className="bg-amber-50 rounded-2xl border border-amber-200 p-4 text-center cursor-pointer hover:border-amber-300 transition"
+          onClick={() => setFilter(filter === "incomplete" ? "all" : "incomplete")}
+        >
+          <p className="text-2xl font-bold text-amber-700">{incompleteCount}</p>
+          <p className="text-amber-700 text-xs mt-1">Incomplete analysis</p>
+        </motion.div>
       </div>
 
       {/* Filter tabs */}
@@ -166,11 +196,12 @@ export default function SimilarityReportsPage() {
           { key: "low", label: "Low" },
           { key: "medium", label: "Medium" },
           { key: "high", label: "High" },
+          { key: "incomplete", label: "Incomplete" },
         ].map((tab) => (
           <button
             key={tab.key}
             onClick={() =>
-              setFilter(tab.key as "all" | "low" | "medium" | "high")
+              setFilter(tab.key as "all" | "low" | "medium" | "high" | "incomplete")
             }
             className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
               filter === tab.key
@@ -190,8 +221,9 @@ export default function SimilarityReportsPage() {
             const student = users.find(
               (u) => u.user_id === project.student_id
             );
-            const isHigh = report.score > 40;
-            const isMid = report.score > 20 && report.score <= 40;
+            const analysisUnavailable = report.analysis_status && report.analysis_status !== "complete";
+            const isHigh = !analysisUnavailable && report.score > 40;
+            const isMid = Boolean(analysisUnavailable) || (report.score > 20 && report.score <= 40);
 
             return (
               <motion.div
@@ -230,8 +262,16 @@ export default function SimilarityReportsPage() {
                       </p>
                     </div>
                   </div>
-                  <ScoreBadge score={report.score} />
+                  <ScoreBadge score={report.score} status={report.analysis_status} />
                 </div>
+
+                {analysisUnavailable && (
+                  <p className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-900">
+                    {report.analysis_status === "extraction_failed"
+                      ? "Text extraction failed. The score is unavailable; review the file manually."
+                      : "Too little readable text was extracted for a reliable comparison."}
+                  </p>
+                )}
 
                 <div>
                   <div className="flex items-center justify-between mb-1">
@@ -239,7 +279,7 @@ export default function SimilarityReportsPage() {
                       Similarity
                     </p>
                     <p className="text-content-primary text-xs font-bold">
-                      {report.score}%
+                      {analysisUnavailable ? "—" : `${report.score}%`}
                     </p>
                   </div>
                   <div className="w-full h-2 bg-background rounded-full border border-border overflow-hidden">
@@ -251,7 +291,7 @@ export default function SimilarityReportsPage() {
                           ? "bg-amber-500"
                           : "bg-green-500"
                       }`}
-                      style={{ width: `${Math.min(report.score, 100)}%` }}
+                      style={{ width: `${analysisUnavailable ? 0 : Math.min(report.score, 100)}%` }}
                     />
                   </div>
                 </div>

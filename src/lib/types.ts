@@ -98,7 +98,8 @@ export interface RepositoryItem {
 export interface SimilarityReport {
   report_id: string;
   submission_id: string;
-  score: number; // 0-100 percentage
+  score: number; // Hybrid similarity signal, not a copied-text percentage.
+  analysis_status?: "complete" | "extraction_failed" | "insufficient_text";
   matched_sources: MatchedSource[];
   generated_at: string;
 }
@@ -107,8 +108,17 @@ export interface MatchedSource {
   source_title: string;
   source_id: string;
   matched_percentage: number;
+  tfidf_similarity?: number;
+  phrase_overlap?: number;
+  shared_phrase_count?: number;
+  matched_by?: "phrase_and_vocabulary" | "vocabulary";
   matched_excerpt: string;
   source_excerpt: string;
+  matched_passages?: Array<{
+    phrase: string;
+    submission_excerpt: string;
+    source_excerpt: string;
+  }>;
 }
 
 export interface Approval {

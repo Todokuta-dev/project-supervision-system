@@ -18,6 +18,7 @@ import {
   AcademicSession,
 } from "@/lib/types";
 import StatusBadge from "@/components/ui/StatusBadge";
+import SimilarityStatusNotice from "@/components/ui/SimilarityStatusNotice";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -303,6 +304,7 @@ export default function ProjectDetailPage() {
               : "bg-red-50 border-red-200"
           }`}
         >
+          <SimilarityStatusNotice status={similarityReport.analysis_status} />
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div
@@ -334,7 +336,7 @@ export default function ProjectDetailPage() {
                       : "text-red-700"
                   }`}
                 >
-                  Similarity Score: {similarityReport.score}%
+                  Similarity Score: {similarityReport.analysis_status && similarityReport.analysis_status !== "complete" ? "Unavailable" : `${similarityReport.score}%`}
                 </p>
                 <p
                   className={`text-xs ${
@@ -345,11 +347,13 @@ export default function ProjectDetailPage() {
                       : "text-red-600"
                   }`}
                 >
-                  {similarityReport.score <= 20
-                    ? "Within acceptable range — no action needed"
+                  {similarityReport.analysis_status && similarityReport.analysis_status !== "complete"
+                    ? "No reliable similarity analysis is available"
+                    : similarityReport.score <= 20
+                    ? "Low similarity signal — review sources as needed"
                     : similarityReport.score <= 40
-                    ? "Moderate similarity — review matched sources"
-                    : "High similarity — significant revision required"}
+                    ? "Moderate similarity signal — review matched sources"
+                    : "High similarity signal — review matched sources"}
                 </p>
               </div>
             </div>
@@ -380,7 +384,7 @@ export default function ProjectDetailPage() {
                       {source.source_title}
                     </p>
                     <span className="text-xs font-bold text-content-secondary">
-                      {source.matched_percentage}% match
+                      {source.matched_percentage}% similarity
                     </span>
                   </div>
                   <p className="text-content-secondary text-xs leading-relaxed italic">

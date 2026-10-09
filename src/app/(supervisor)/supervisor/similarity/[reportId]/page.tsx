@@ -8,6 +8,7 @@ import { getProjectById } from "@/lib/services/projects.service";
 import { getUsers } from "@/lib/services/users.service";
 import { SimilarityReport, Submission, Project, User as UserType } from "@/lib/types";
 import { motion } from "framer-motion";
+import SimilarityStatusNotice from "@/components/ui/SimilarityStatusNotice";
 import {
   ArrowLeft,
   ShieldCheck,
@@ -84,8 +85,9 @@ export default function SimilarityReportDetailPage() {
   if (!report) return null;
 
   const student = users.find((u) => u.user_id === project?.student_id);
-  const isHigh = report.score > 40;
-  const isMid = report.score > 20 && report.score <= 40;
+  const isUnavailable = report.analysis_status && report.analysis_status !== "complete";
+  const isHigh = !isUnavailable && report.score > 40;
+  const isMid = Boolean(isUnavailable) || (report.score > 20 && report.score <= 40);
 
   return (
     <motion.div
@@ -114,6 +116,8 @@ export default function SimilarityReportDetailPage() {
           Detailed breakdown of matched sources and excerpts
         </p>
       </motion.div>
+
+      <SimilarityStatusNotice status={report.analysis_status} />
 
       {/* Score card */}
       <motion.div
@@ -156,7 +160,9 @@ export default function SimilarityReportDetailPage() {
                   : "text-green-700"
               }`}
             >
-              {report.score}%
+              {report.analysis_status && report.analysis_status !== "complete"
+                ? "Unavailable"
+                : `${report.score}%`}
             </p>
             <p
               className={`text-sm font-semibold ${
@@ -167,11 +173,13 @@ export default function SimilarityReportDetailPage() {
                   : "text-green-600"
               }`}
             >
-              {isHigh
-                ? "High Similarity — Significant revision required"
+              {report.analysis_status && report.analysis_status !== "complete"
+                ? "Similarity unavailable — review the file"
+                : isHigh
+                ? "High similarity signal — review passages"
                 : isMid
-                ? "Moderate Similarity — Review matched sources"
-                : "Low Similarity — Within acceptable range"}
+                ? "Moderate similarity signal — review passages"
+                : "Low similarity signal — review as needed"}
             </p>
             <p
               className={`text-xs mt-1 ${
@@ -264,8 +272,8 @@ export default function SimilarityReportDetailPage() {
           Matched Sources ({report.matched_sources.length})
         </h2>
         <p className="text-content-secondary text-xs">
-          Each matched source shows the text found in the submission alongside
-          the original source text from the repository.
+          Similarity signals combine matching phrases and document vocabulary.
+          Review the highlighted passages; the score is not a copied-text percentage.
         </p>
 
         {report.matched_sources.map((source, index) => (
@@ -277,6 +285,9 @@ export default function SimilarityReportDetailPage() {
               <p className="text-content-primary text-sm font-semibold">
                 {index + 1}. {source.source_title}
               </p>
+              <p className="text-content-secondary text-xs">
+                {source.shared_phrase_count ?? 0} shared phrases | Phrase overlap {source.phrase_overlap ?? 0}% | TF-IDF {source.tfidf_similarity ?? 0}%
+              </p>
               <span
                 className={`text-xs font-bold px-3 py-1 rounded-full border ${
                   source.matched_percentage > 20
@@ -284,27 +295,42 @@ export default function SimilarityReportDetailPage() {
                     : "bg-amber-50 text-amber-700 border-amber-200"
                 }`}
               >
-                {source.matched_percentage}% match
+                  {source.matched_percentage}% similarity
               </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-border">
-              <div className="p-4 space-y-2">
-                <p className="text-xs font-semibold text-content-secondary uppercase tracking-wider">
-                  From Submitted Document
-                </p>
-                <p className="text-content-primary text-sm leading-relaxed italic bg-background rounded-xl p-3 border border-border">
-                  &ldquo;{source.matched_excerpt}&rdquo;
-                </p>
-              </div>
-              <div className="p-4 space-y-2">
-                <p className="text-xs font-semibold text-content-secondary uppercase tracking-wider">
-                  From Repository Source
-                </p>
-                <p className="text-content-primary text-sm leading-relaxed italic bg-background rounded-xl p-3 border border-border">
-                  &ldquo;{source.source_excerpt}&rdquo;
-                </p>
-              </div>
+            <div className="space-y-3 p-4">
+              {source.matched_passages?.length ? (
+                source.matched_passages.map((passage, passageIndex) => (
+                  <div key={passageIndex} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <p className="text-xs font-semibold text-content-secondary uppercase tracking-wider">
+                        Submission · phrase: {passage.phrase}
+                      </p>
+                      <p className="text-content-primary text-sm leading-relaxed italic bg-background rounded-xl p-3 border border-border">
+                        &ldquo;{passage.submission_excerpt}&rdquo;
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-xs font-semibold text-content-secondary uppercase tracking-wider">
+                        Source passage
+                      </p>
+                      <p className="text-content-primary text-sm leading-relaxed italic bg-background rounded-xl p-3 border border-border">
+                        &ldquo;{passage.source_excerpt}&rdquo;
+                      </p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <p className="text-content-primary text-sm leading-relaxed italic bg-background rounded-xl p-3 border border-border">
+                    &ldquo;{source.matched_excerpt}&rdquo;
+                  </p>
+                  <p className="text-content-primary text-sm leading-relaxed italic bg-background rounded-xl p-3 border border-border">
+                    &ldquo;{source.source_excerpt}&rdquo;
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         ))}
