@@ -15,13 +15,13 @@ import {
   FileText,
   Clock,
   CheckCircle2,
-  AlertCircle,
   Plus,
   X,
   PartyPopper,
   FolderOpen,
 } from "lucide-react";
 import Link from "next/link";
+import SubmissionReviewStatus from "@/components/ui/SubmissionReviewStatus";
 
 const containerVariants = {
   hidden: {},
@@ -53,26 +53,6 @@ const ALLOWED_TYPES = [
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 ];
 const MAX_SIZE_MB = 10;
-
-function DecisionBadge({ decision }: { decision: string }) {
-  const isApproved = decision === "approve";
-  return (
-    <span
-      className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-0.5 rounded-full border ${
-        isApproved
-          ? "bg-green-50 text-green-600 border-green-200"
-          : "bg-red-50 text-red-600 border-red-200"
-      }`}
-    >
-      {isApproved ? (
-        <CheckCircle2 className="w-3 h-3" />
-      ) : (
-        <AlertCircle className="w-3 h-3" />
-      )}
-      {isApproved ? "Approved" : "Correction Required"}
-    </span>
-  );
-}
 
 export default function SubmissionsPage() {
   const { user } = useAuth();
@@ -414,28 +394,11 @@ export default function SubmissionsPage() {
                         </div>
                       </div>
 
-                      <div className="flex-shrink-0">
-                        {feedback ? (
-                          <DecisionBadge decision={feedback.decision} />
-                        ) : (
-                          <span className="text-xs text-content-secondary bg-background border border-border px-2.5 py-1 rounded-full">
-                            Awaiting review
-                          </span>
-                        )}
-                      </div>
                     </div>
 
-                    {/* Feedback preview */}
-                    {feedback && (
-                      <div className="mt-4 pt-4 border-t border-border">
-                        <p className="text-content-secondary text-xs font-semibold uppercase tracking-wider mb-2">
-                          Supervisor Feedback
-                        </p>
-                        <p className="text-content-secondary text-sm leading-relaxed line-clamp-2">
-                          {feedback.comments}
-                        </p>
-                      </div>
-                    )}
+                    <div className="mt-4">
+                      <SubmissionReviewStatus feedback={feedback} />
+                    </div>
                   </motion.div>
                 );
               })}

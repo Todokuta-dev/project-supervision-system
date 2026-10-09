@@ -14,6 +14,7 @@ import {
   ProjectStatus,
 } from "@/lib/types";
 import StatusBadge from "@/components/ui/StatusBadge";
+import SimilarityStatusNotice from "@/components/ui/SimilarityStatusNotice";
 import { motion } from "framer-motion";
 import {
   FolderOpen,
@@ -28,6 +29,7 @@ import {
   Info,
 } from "lucide-react";
 import Link from "next/link";
+import SubmissionReviewStatus from "@/components/ui/SubmissionReviewStatus";
 
 // --- Animation Variants ---
 const containerVariants = {
@@ -63,7 +65,7 @@ function StatCard({
   return (
     <motion.div
       variants={cardVariants}
-      className={`rounded-2xl p-5 flex items-start justify-between border ${
+      className={`rounded-2xl p-4 sm:p-5 flex items-start justify-between gap-3 border transition-shadow hover:shadow-sm ${
         accent
           ? "bg-primary text-white border-primary"
           : "bg-background-surface border-border"
@@ -78,7 +80,7 @@ function StatCard({
           {label}
         </p>
         <p
-          className={`text-2xl font-bold ${
+          className={`text-xl sm:text-2xl font-bold capitalize leading-tight ${
             accent ? "text-white" : "text-content-primary"
           }`}
         >
@@ -428,22 +430,32 @@ export default function StudentDashboard() {
         />
         <StatCard
           label="Similarity Score"
-          value={similarityReport ? `${similarityReport.score}%` : "—"}
+          value={
+            !similarityReport
+              ? "—"
+              : similarityReport.analysis_status && similarityReport.analysis_status !== "complete"
+                ? "Unavailable"
+                : `${similarityReport.score}%`
+          }
           icon={ShieldCheck}
           sub={
             similarityReport
-              ? similarityReport.score <= 20
-                ? "Within acceptable range"
-                : "Review matched sources"
+              ? similarityReport.analysis_status && similarityReport.analysis_status !== "complete"
+                ? "Text needs review"
+                : "Review similarity signals"
               : "No report yet"
           }
         />
       </div>
 
+      {similarityReport && (
+        <SimilarityStatusNotice status={similarityReport.analysis_status} />
+      )}
+
       {/* --- CURRENT PROJECT CARD --- */}
       <motion.div
         variants={cardVariants}
-        className="bg-background-surface rounded-2xl border border-border p-6"
+        className="bg-background-surface rounded-2xl border border-border p-5 sm:p-6"
       >
         <div className="flex items-start justify-between mb-4">
           <h2 className="text-content-primary font-bold text-base">
@@ -462,13 +474,13 @@ export default function StudentDashboard() {
 
         {project ? (
           <div className="space-y-4">
-            <div className="flex items-start justify-between gap-4">
-              <h3 className="text-content-primary font-semibold text-sm leading-snug flex-1">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+              <h3 className="text-content-primary font-semibold text-base leading-snug flex-1 min-w-0">
                 {project.title}
               </h3>
               <StatusBadge status={project.status} />
             </div>
-            <p className="text-content-secondary text-sm leading-relaxed">
+            <p className="text-content-secondary text-sm leading-relaxed max-w-3xl">
               {project.description}
             </p>
             <div className="flex items-center gap-4 pt-1">
@@ -517,7 +529,7 @@ export default function StudentDashboard() {
         {/* Recent Submissions */}
         <motion.div
           variants={cardVariants}
-          className="bg-background-surface rounded-2xl border border-border p-6"
+          className="bg-background-surface rounded-2xl border border-border p-5 sm:p-6"
         >
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-content-primary font-bold text-base">
@@ -537,14 +549,14 @@ export default function StudentDashboard() {
               {recentSubmissions.map((sub) => (
                 <div
                   key={sub.submission_id}
-                  className="flex items-center justify-between py-2.5 border-b border-border last:border-0"
+                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 py-3 border-b border-border last:border-0"
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
                     <div className="w-8 h-8 bg-primary/8 rounded-lg flex items-center justify-center flex-shrink-0">
                       <Upload className="w-4 h-4 text-primary" />
                     </div>
-                    <div>
-                      <p className="text-content-primary text-sm font-medium">
+                    <div className="min-w-0">
+                      <p className="text-content-primary text-sm font-medium truncate">
                         {sub.chapter_label}
                       </p>
                       <p className="text-content-secondary text-xs">
@@ -559,9 +571,12 @@ export default function StudentDashboard() {
                       </p>
                     </div>
                   </div>
-                  <span className="text-xs text-content-secondary bg-background px-2 py-1 rounded-lg border border-border capitalize">
-                    {sub.submission_type.replace(/_/g, " ")}
-                  </span>
+                  <SubmissionReviewStatus
+                    compact
+                    feedback={feedbackList.find(
+                      (feedback) => feedback.submission_id === sub.submission_id,
+                    )}
+                  />
                 </div>
               ))}
             </div>
@@ -578,7 +593,7 @@ export default function StudentDashboard() {
         {/* Recent Feedback */}
         <motion.div
           variants={cardVariants}
-          className="bg-background-surface rounded-2xl border border-border p-6"
+          className="bg-background-surface rounded-2xl border border-border p-5 sm:p-6"
         >
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-content-primary font-bold text-base">
@@ -638,7 +653,7 @@ export default function StudentDashboard() {
       {/* --- QUICK ACTIONS --- */}
       <motion.div
         variants={cardVariants}
-        className="bg-background-surface rounded-2xl border border-border p-6"
+        className="bg-background-surface rounded-2xl border border-border p-5 sm:p-6"
       >
         <h2 className="text-content-primary font-bold text-base mb-4">
           Quick Actions
@@ -646,7 +661,7 @@ export default function StudentDashboard() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <Link
             href="/student/topics/new"
-            className="flex items-center gap-3 p-4 rounded-xl border border-border hover:border-primary/30 hover:bg-primary/5 transition-all group"
+            className="flex items-center gap-3 p-4 rounded-xl border border-border hover:border-primary/30 hover:bg-primary/5 hover:shadow-sm transition-all group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             <div className="w-9 h-9 bg-primary/8 rounded-xl flex items-center justify-center group-hover:bg-primary/15 transition">
               <FolderOpen className="w-4 h-4 text-primary" />
@@ -663,7 +678,7 @@ export default function StudentDashboard() {
 
           <Link
             href="/student/submissions"
-            className="flex items-center gap-3 p-4 rounded-xl border border-border hover:border-primary/30 hover:bg-primary/5 transition-all group"
+            className="flex items-center gap-3 p-4 rounded-xl border border-border hover:border-primary/30 hover:bg-primary/5 hover:shadow-sm transition-all group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             <div className="w-9 h-9 bg-primary/8 rounded-xl flex items-center justify-center group-hover:bg-primary/15 transition">
               <Upload className="w-4 h-4 text-primary" />
@@ -680,7 +695,7 @@ export default function StudentDashboard() {
 
           <Link
             href="/student/repository"
-            className="flex items-center gap-3 p-4 rounded-xl border border-border hover:border-primary/30 hover:bg-primary/5 transition-all group"
+            className="flex items-center gap-3 p-4 rounded-xl border border-border hover:border-primary/30 hover:bg-primary/5 hover:shadow-sm transition-all group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             <div className="w-9 h-9 bg-primary/8 rounded-xl flex items-center justify-center group-hover:bg-primary/15 transition">
               <BookOpen className="w-4 h-4 text-primary" />

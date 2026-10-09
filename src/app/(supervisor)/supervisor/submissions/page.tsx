@@ -12,12 +12,11 @@ import {
   ClipboardList,
   FileText,
   Clock,
-  CheckCircle2,
-  AlertCircle,
   ArrowRight,
   Search,
 } from "lucide-react";
 import Link from "next/link";
+import SubmissionReviewStatus from "@/components/ui/SubmissionReviewStatus";
 
 const containerVariants = {
   hidden: {},
@@ -32,26 +31,6 @@ const cardVariants = {
     transition: { duration: 0.4, ease: "easeOut" as const },
   },
 };
-
-function DecisionBadge({ decision }: { decision: string }) {
-  const isApproved = decision === "approve";
-  return (
-    <span
-      className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full border ${
-        isApproved
-          ? "bg-green-50 text-green-600 border-green-200"
-          : "bg-red-50 text-red-600 border-red-200"
-      }`}
-    >
-      {isApproved ? (
-        <CheckCircle2 className="w-3 h-3" />
-      ) : (
-        <AlertCircle className="w-3 h-3" />
-      )}
-      {isApproved ? "Approved" : "Correction Required"}
-    </span>
-  );
-}
 
 export default function ReviewQueuePage() {
   const { user } = useAuth();
@@ -151,8 +130,11 @@ export default function ReviewQueuePage() {
   const pendingCount = submissions.filter(
     (s) => !reviewedIds.has(s.submission_id)
   ).length;
-  const reviewedCount = submissions.filter((s) =>
-    reviewedIds.has(s.submission_id)
+  const approvedCount = feedbackList.filter(
+    (feedback) => feedback.decision === "approve",
+  ).length;
+  const revisionCount = feedbackList.filter(
+    (feedback) => feedback.decision === "correction_required",
   ).length;
 
   return (
@@ -173,7 +155,7 @@ export default function ReviewQueuePage() {
       </motion.div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <motion.div
           variants={cardVariants}
           className="bg-primary rounded-2xl border border-primary p-4 text-center"
@@ -194,8 +176,15 @@ export default function ReviewQueuePage() {
           variants={cardVariants}
           className="bg-green-50 rounded-2xl border border-green-200 p-4 text-center"
         >
-          <p className="text-2xl font-bold text-green-600">{reviewedCount}</p>
-          <p className="text-green-600 text-xs mt-1">Reviewed</p>
+          <p className="text-2xl font-bold text-green-600">{approvedCount}</p>
+          <p className="text-green-600 text-xs mt-1">Approved</p>
+        </motion.div>
+        <motion.div
+          variants={cardVariants}
+          className="bg-red-50 rounded-2xl border border-red-200 p-4 text-center"
+        >
+          <p className="text-2xl font-bold text-red-600">{revisionCount}</p>
+          <p className="text-red-600 text-xs mt-1">Revisions Requested</p>
         </motion.div>
       </div>
 
@@ -284,24 +273,11 @@ export default function ReviewQueuePage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 flex-shrink-0">
-                    {isReviewed && feedback ? (
-                      <DecisionBadge decision={feedback.decision} />
-                    ) : (
-                      <span className="text-xs font-medium text-amber-600 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full">
-                        Pending
-                      </span>
-                    )}
-                  </div>
                 </div>
 
-                {isReviewed && feedback && (
-                  <div className="mt-4 pt-4 border-t border-border">
-                    <p className="text-content-secondary text-xs line-clamp-2 leading-relaxed">
-                      {feedback.comments}
-                    </p>
-                  </div>
-                )}
+                <div className="mt-4">
+                  <SubmissionReviewStatus feedback={feedback} />
+                </div>
 
                 <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">
                   <p className="text-content-secondary text-xs">
