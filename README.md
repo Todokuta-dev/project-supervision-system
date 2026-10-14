@@ -9,7 +9,7 @@ Next.js frontend for the student project supervision platform. The app has separ
 3. Start the Laravel API on port 8000 and set its `FRONTEND_URL=http://localhost:3000`.
 4. Start the frontend with `npm run dev` and open `http://localhost:3000`.
 
-The API uses Sanctum stateful sessions. The frontend obtains a CSRF cookie before login or registration and sends cookies with API requests; it does not save authentication tokens in browser storage. For production, serve both apps over HTTPS on the same site and configure the API's `SANCTUM_STATEFUL_DOMAINS`, `FRONTEND_URL`, and `SESSION_DOMAIN` for the deployed hosts.
+The API uses Sanctum stateful sessions. The frontend obtains a CSRF cookie before login or registration and sends cookies with API requests; it does not save authentication tokens in browser storage. For production, set `API_PROXY_TARGET` to the Railway API origin (for example, `https://your-service.up.railway.app`) and `NEXT_PUBLIC_API_URL=/backend/api` in Vercel. The Next.js rewrite proxies `/backend/*` to Laravel so browser requests and cookies stay same-origin. On Railway, configure `SANCTUM_STATEFUL_DOMAINS` with the Vercel hostname, `FRONTEND_URL` with its full HTTPS origin, and leave `SESSION_DOMAIN` unset when using the default Vercel domain.
 
 ## Main areas
 
