@@ -4,7 +4,8 @@
 // Handles base URL, auth headers, and error parsing.
 // ============================================
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const configuredApiUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/+$/, "");
+const API_URL = configuredApiUrl && /\/api$/.test(configuredApiUrl) ? configuredApiUrl : configuredApiUrl ? configuredApiUrl + "/api" : undefined;
 
 export class ApiError extends Error {
   status: number;
